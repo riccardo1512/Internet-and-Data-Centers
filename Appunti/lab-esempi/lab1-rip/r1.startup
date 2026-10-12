@@ -1,0 +1,6 @@
+# Configurazione indirizzi IP delle interfacce
+ip address add 100.1.1.1/24 dev eth0
+ip address add 100.1.0.1/30 dev eth1
+
+# Avvio del demone di routing FRRouting
+systemctl start frr

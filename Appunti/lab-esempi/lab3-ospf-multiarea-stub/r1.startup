@@ -1,0 +1,8 @@
+# Assegnazione indirizzi IP
+# eth0 -> verso bb1 (Stub Area 1.1.1.1)
+ip address add 100.0.0.2/30 dev eth0
+# eth1 -> LAN interna Stub (200.0.0.0/24)
+ip address add 200.0.0.1/24 dev eth1
+
+# Avvio FRRouting
+systemctl start frr
