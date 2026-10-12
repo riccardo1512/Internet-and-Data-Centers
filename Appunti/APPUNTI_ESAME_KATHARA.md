@@ -484,6 +484,8 @@ Cartella sul sistema: `Appunti/lab-esempi/`
 ### LAB 1: RIPv2 con Default Route
 Topologia: `r1` (interno) $\leftrightarrow$ [LAN B: 100.1.0.0/30] $\leftrightarrow$ `r2` (border) $\leftrightarrow$ [LAN C: 100.2.0.0/30] $\leftrightarrow$ `rext` (Internet).
 
+![Architettura Lab 1 - RIP](lab-esempi/lab1-rip/topology.png)
+
 #### `lab.conf`
 ```bash
 r1[0]="A"
@@ -539,6 +541,8 @@ ip route add 100.1.0.0/16 via 100.2.0.1
 
 ### LAB 2: OSPF Single-Area (Area 0.0.0.0) con Costi e DR/BDR
 Topologia: `bb0`, `bb1`, `bb2` connessi su LAN A broadcast (10.0.0.0/24). Link alternativo LAN B tra `bb0` e `bb1` con costo 50.
+
+![Architettura Lab 2 - OSPF Single Area](lab-esempi/lab2-ospf-singlearea/topology.png)
 
 #### `lab.conf`
 ```bash
@@ -613,6 +617,8 @@ log file /var/log/frr/frr.log
 
 ### LAB 3: OSPF Multi-Area con Stub Area (Backbone + Stub Area 1.1.1.1)
 Topologia: `bb0` (Area 0) $\leftrightarrow$ `bb1` (Area 0 + Area 1.1.1.1) $\leftrightarrow$ `r1` (Area 1.1.1.1).
+
+![Architettura Lab 3 - OSPF Multi-Area Stub](lab-esempi/lab3-ospf-multiarea-stub/topology.png)
 
 #### `lab.conf`
 ```bash
