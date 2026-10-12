@@ -1,0 +1,10 @@
+# Assegnazione indirizzi IP
+# eth0 -> Backbone Area 0.0.0.0 (LAN A)
+ip address add 10.0.0.3/24 dev eth0
+# eth1 -> Stub Area 2.2.2.2 (Link E verso r2)
+ip address add 110.0.0.1/30 dev eth1
+# eth2 -> Stub Area 3.3.3.3 (Link G verso r3)
+ip address add 120.0.0.1/30 dev eth2
+
+# Avvio FRRouting
+systemctl start frr

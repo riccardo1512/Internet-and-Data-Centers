@@ -621,27 +621,50 @@ log file /var/log/frr/frr.log
 
 ---
 
-### LAB 3: OSPF Multi-Area con Stub Area (Backbone + Stub Area 1.1.1.1)
-Topologia: `bb0` (Area 0) $\leftrightarrow$ `bb1` (Area 0 + Area 1.1.1.1) $\leftrightarrow$ `r1` (Area 1.1.1.1).
+### LAB 3: OSPF Multi-Area con 3 Stub Aree (Backbone 0, Stub 1.1.1.1, Stub 2.2.2.2, Stub 3.3.3.3)
+Topologia completa per tutti i casi d'esame:
+* `bb0`: Router puramente interno di Backbone (Area 0.0.0.0).
+* `bb1`: **ABR mono-stub**, connette il Backbone ad Area 1.1.1.1 (`r1`).
+* `bb2`: **ABR multi-stub**, connette il Backbone sia ad Area 2.2.2.2 (`r2`) sia ad Area 3.3.3.3 (`r3`).
+* `r1`, `r2`, `r3`: Router interni delle rispettive aree Stub con LAN dedicate.
 
 ![Architettura Lab 3 - OSPF Multi-Area Stub](lab-esempi/lab3-ospf-multiarea-stub/topology.png)
 
 #### `lab.conf`
 ```bash
+# bb0: Backbone router
 bb0[0]="A"
 bb0[1]="B"
 bb0[image]="kathara/frr:9"
 
+# bb1: ABR (Area 0 + Area 1.1.1.1)
 bb1[0]="A"
 bb1[1]="C"
 bb1[image]="kathara/frr:9"
 
+# bb2: ABR multi-stub (Area 0 + Area 2.2.2.2 + Area 3.3.3.3)
+bb2[0]="A"
+bb2[1]="E"
+bb2[2]="G"
+bb2[image]="kathara/frr:9"
+
+# r1: Stub router (Area 1.1.1.1)
 r1[0]="C"
 r1[1]="D"
 r1[image]="kathara/frr:9"
+
+# r2: Stub router (Area 2.2.2.2)
+r2[0]="E"
+r2[1]="F"
+r2[image]="kathara/frr:9"
+
+# r3: Stub router (Area 3.3.3.3)
+r3[0]="G"
+r3[1]="H"
+r3[image]="kathara/frr:9"
 ```
 
-#### `bb0.startup`
+#### `bb0.startup` (Backbone Router)
 ```bash
 ip address add 10.0.0.1/24 dev eth0
 ip address add 10.0.1.1/24 dev eth1
@@ -659,7 +682,7 @@ router ospf
 log file /var/log/frr/frr.log
 ```
 
-#### `bb1.startup`
+#### `bb1.startup` (ABR: Area 0 + Area 1)
 ```bash
 ip address add 10.0.0.2/24 dev eth0
 ip address add 100.0.0.1/30 dev eth1
@@ -679,7 +702,32 @@ router ospf
 log file /var/log/frr/frr.log
 ```
 
-#### `r1.startup`
+#### `bb2.startup` (ABR multi-stub: Area 0 + Area 2 + Area 3)
+```bash
+ip address add 10.0.0.3/24 dev eth0
+ip address add 110.0.0.1/30 dev eth1
+ip address add 120.0.0.1/30 dev eth2
+systemctl start frr
+```
+
+#### `bb2/etc/frr/frr.conf`
+```text
+interface eth0
+    ospf cost 10
+interface eth1
+    ospf cost 10
+interface eth2
+    ospf cost 10
+router ospf
+    network 10.0.0.0/16 area 0.0.0.0
+    network 110.0.0.0/30 area 2.2.2.2
+    network 120.0.0.0/30 area 3.3.3.3
+    area 2.2.2.2 stub
+    area 3.3.3.3 stub
+log file /var/log/frr/frr.log
+```
+
+#### `r1.startup` (Internal Router: Stub Area 1.1.1.1)
 ```bash
 ip address add 100.0.0.2/30 dev eth0
 ip address add 200.0.0.1/24 dev eth1
@@ -696,6 +744,46 @@ router ospf
     network 100.0.0.0/30 area 1.1.1.1
     network 200.0.0.0/24 area 1.1.1.1
     area 1.1.1.1 stub
+log file /var/log/frr/frr.log
+```
+
+#### `r2.startup` (Internal Router: Stub Area 2.2.2.2)
+```bash
+ip address add 110.0.0.2/30 dev eth0
+ip address add 210.0.0.1/24 dev eth1
+systemctl start frr
+```
+
+#### `r2/etc/frr/frr.conf`
+```text
+interface eth0
+    ospf cost 10
+interface eth1
+    ospf cost 10
+router ospf
+    network 110.0.0.0/30 area 2.2.2.2
+    network 210.0.0.0/24 area 2.2.2.2
+    area 2.2.2.2 stub
+log file /var/log/frr/frr.log
+```
+
+#### `r3.startup` (Internal Router: Stub Area 3.3.3.3)
+```bash
+ip address add 120.0.0.2/30 dev eth0
+ip address add 220.0.0.1/24 dev eth1
+systemctl start frr
+```
+
+#### `r3/etc/frr/frr.conf`
+```text
+interface eth0
+    ospf cost 10
+interface eth1
+    ospf cost 10
+router ospf
+    network 120.0.0.0/30 area 3.3.3.3
+    network 220.0.0.0/24 area 3.3.3.3
+    area 3.3.3.3 stub
 log file /var/log/frr/frr.log
 ```
 

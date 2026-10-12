@@ -1,299 +1,451 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" style="background:#ffffff;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
   <defs>
-    <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.3"/>
+    <!-- Filter for 3D Router Disc Drop Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-opacity="0.35"/>
     </filter>
   </defs>
 
-  <!-- Kathara Logo -->
-  
-    <g transform="translate(30, 30)">
-      <!-- Blue cube -->
-      <polygon points="30,0 55,12 30,24 5,12" fill="#5dade2" stroke="#1b4f72" stroke-width="1.5"/>
-      <polygon points="5,12 30,24 30,50 5,38" fill="#2e86c1" stroke="#1b4f72" stroke-width="1.5"/>
-      <polygon points="30,24 55,12 55,38 30,50" fill="#1b4f72" stroke="#1b4f72" stroke-width="1.5"/>
-      <!-- Orange cube -->
-      <polygon points="68,14 82,21 68,28 54,21" fill="#f5b041" stroke="#b9770e" stroke-width="1.2"/>
-      <polygon points="54,21 68,28 68,43 54,36" fill="#e59866" stroke="#b9770e" stroke-width="1.2"/>
-      <polygon points="68,28 82,21 82,36 68,43" fill="#b9770e" stroke="#b9770e" stroke-width="1.2"/>
-      <!-- Yellow cube -->
-      <polygon points="20,44 40,54 20,64 0,54" fill="#f9e79f" stroke="#b7950b" stroke-width="1.5"/>
-      <polygon points="0,54 20,64 20,84 0,74" fill="#f7dc6f" stroke="#b7950b" stroke-width="1.5"/>
-      <polygon points="20,64 40,54 40,74 20,84" fill="#d4ac0d" stroke="#b7950b" stroke-width="1.5"/>
-      <!-- Green cube -->
-      <polygon points="56,38 80,50 56,62 32,50" fill="#a9dfbf" stroke="#1e8449" stroke-width="1.5"/>
-      <polygon points="32,50 56,62 56,86 32,74" fill="#7dcea0" stroke="#1e8449" stroke-width="1.5"/>
-      <polygon points="56,62 80,50 80,74 56,86" fill="#229954" stroke="#1e8449" stroke-width="1.5"/>
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#ffffff"/>
+
+  <!-- Logo (Top Left) -->
+  <g transform="translate(30, 40) scale(0.75)">
+    <!-- Blue Cube (Top) -->
+    <polygon points="40,10 65,24 40,38 15,24" fill="#5b9bd5" stroke="#1f4e79" stroke-width="1.5"/>
+    <polygon points="15,24 40,38 40,68 15,54" fill="#2e75b6" stroke="#1f4e79" stroke-width="1.5"/>
+    <polygon points="40,38 65,24 65,54 40,68" fill="#1f4e79" stroke="#1f4e79" stroke-width="1.5"/>
+    <!-- Orange Cube (Right) -->
+    <g transform="translate(35, 15) scale(0.65)">
+      <polygon points="40,10 65,24 40,38 15,24" fill="#ed7d31" stroke="#c55a11" stroke-width="1.5"/>
+      <polygon points="15,24 40,38 40,68 15,54" fill="#f4b183" stroke="#c55a11" stroke-width="1.5"/>
+      <polygon points="40,38 65,24 65,54 40,68" fill="#c55a11" stroke="#c55a11" stroke-width="1.5"/>
     </g>
-    
+    <!-- Yellow Cube (Bottom Left) -->
+    <g transform="translate(0, 48) scale(0.7)">
+      <polygon points="40,10 65,24 40,38 15,24" fill="#ffc000" stroke="#b28900" stroke-width="1.5"/>
+      <polygon points="15,24 40,38 40,68 15,54" fill="#ffd966" stroke="#b28900" stroke-width="1.5"/>
+      <polygon points="40,38 65,24 65,54 40,68" fill="#b28900" stroke="#b28900" stroke-width="1.5"/>
+    </g>
+    <!-- Green Cube (Bottom Right) -->
+    <g transform="translate(35, 45) scale(0.8)">
+      <polygon points="40,10 65,24 40,38 15,24" fill="#70ad47" stroke="#385623" stroke-width="1.5"/>
+      <polygon points="15,24 40,38 40,68 15,54" fill="#a8d08d" stroke="#385623" stroke-width="1.5"/>
+      <polygon points="40,38 65,24 65,54 40,68" fill="#385623" stroke="#385623" stroke-width="1.5"/>
+    </g>
+  </g>
 
-  <!-- Title in red -->
-  <text x="480" y="85" fill="#ff0000" font-size="46" font-family="Arial, sans-serif" font-weight="normal">lab topology</text>
+  <!-- Title -->
+  <text x="640" y="70" fill="#ff0000" font-size="44" font-family="Arial, sans-serif" font-weight="normal" text-anchor="middle">lab topology</text>
 
-  <!-- Backbone Area 0 Cloud (Bottom/Left) -->
-  <path d="M 200 480 
-           C 180 320, 320 280, 480 280 
-           C 620 280, 720 320, 720 450 
-           C 720 580, 560 640, 420 640 
-           C 260 640, 200 580, 200 480 Z" 
-        fill="#cbf78a" fill-opacity="0.85" stroke="none"/>
+  <!-- Area Clouds -->
+  <!-- Backbone Area 0.0.0.0 Cloud -->
+  <path d="M 120,380 
+           C 120,240 220,190 350,190 
+           C 420,190 480,210 520,240 
+           C 560,280 580,340 570,420 
+           C 570,520 500,580 400,580 
+           C 280,580 180,550 140,490 
+           C 120,450 120,410 120,380 Z" 
+        fill="#cbf78a" opacity="0.75"/>
 
-  <!-- Stub Area 1.1.1.1 Cloud (Top/Right) -->
-  <path d="M 640 320 
-           C 640 180, 760 150, 920 150 
-           C 1060 150, 1180 200, 1180 320 
-           C 1180 440, 1040 500, 900 500 
-           C 760 500, 640 440, 640 320 Z" 
-        fill="#cbf78a" fill-opacity="0.85" stroke="none"/>
+  <!-- Stub Area 1.1.1.1 Cloud (Top Right) -->
+  <path d="M 520,240 
+           C 520,150 640,120 780,120 
+           C 920,120 1060,140 1060,210 
+           C 1060,280 950,300 820,300 
+           C 680,300 550,310 520,240 Z" 
+        fill="#cbf78a" opacity="0.75"/>
+
+  <!-- Stub Area 2.2.2.2 Cloud (Middle Right) -->
+  <path d="M 540,430 
+           C 540,350 660,330 800,330 
+           C 940,330 1070,360 1070,430 
+           C 1070,500 950,510 820,510 
+           C 670,510 550,500 540,430 Z" 
+        fill="#cbf78a" opacity="0.75"/>
+
+  <!-- Stub Area 3.3.3.3 Cloud (Bottom Right) -->
+  <path d="M 540,560 
+           C 540,490 670,490 800,490 
+           C 940,490 1070,520 1070,590 
+           C 1070,660 920,670 800,670 
+           C 660,670 540,640 540,560 Z" 
+        fill="#cbf78a" opacity="0.75"/>
 
   <!-- Area Badges -->
-  <!-- 0.0.0.0 Badge -->
-  <g transform="translate(240, 320)">
-    <rect x="0" y="0" width="110" height="42" rx="8" fill="#000000"/>
-    <text x="55" y="28" fill="#ffffff" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">0.0.0.0</text>
-    <text x="55" y="65" fill="#000000" font-size="22" font-family="Arial, sans-serif">backbone</text>
+  <!-- Backbone 0.0.0.0 Badge -->
+  <g transform="translate(140, 230)">
+    <rect x="0" y="0" width="110" height="36" rx="8" ry="8" fill="#000000"/>
+    <text x="55" y="24" fill="#ffffff" font-size="19" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">0.0.0.0</text>
+    <text x="55" y="55" fill="#000000" font-size="18" font-family="Arial, sans-serif" text-anchor="middle">backbone</text>
   </g>
 
-  <!-- 1.1.1.1 Badge -->
-  <g transform="translate(740, 170)">
-    <rect x="0" y="0" width="95" height="42" rx="8" fill="#000000"/>
-    <text x="47" y="28" fill="#ffffff" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1.1.1.1</text>
-    <text x="47" y="65" fill="#000000" font-size="22" font-family="Arial, sans-serif">stub</text>
+  <!-- Stub Area 1.1.1.1 Badge -->
+  <g transform="translate(680, 130)">
+    <rect x="0" y="0" width="100" height="34" rx="8" ry="8" fill="#000000"/>
+    <text x="50" y="23" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1.1.1.1</text>
   </g>
 
-  <!-- Link Lines (Solid thick black lines) -->
+  <!-- Stub Area 2.2.2.2 Badge -->
+  <g transform="translate(680, 340)">
+    <rect x="0" y="0" width="100" height="34" rx="8" ry="8" fill="#000000"/>
+    <text x="50" y="23" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2.2.2.2</text>
+  </g>
+
+  <!-- Stub Area 3.3.3.3 Badge -->
+  <g transform="translate(680, 500)">
+    <rect x="0" y="0" width="100" height="34" rx="8" ry="8" fill="#000000"/>
+    <text x="50" y="23" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">3.3.3.3</text>
+  </g>
+
+  <!-- Physical Network Links (Black Solid Lines) -->
   <!-- LAN B to bb0 -->
-  <line x1="260" y1="480" x2="380" y2="480" stroke="#000000" stroke-width="3.5"/>
+  <line x1="220" y1="380" x2="300" y2="380" stroke="#000000" stroke-width="3.5"/>
+
   <!-- bb0 to LAN A -->
-  <line x1="380" y1="480" x2="520" y2="480" stroke="#000000" stroke-width="3.5"/>
+  <line x1="380" y1="380" x2="460" y2="380" stroke="#000000" stroke-width="3.5"/>
+
   <!-- LAN A to bb1 -->
-  <line x1="520" y1="480" x2="660" y2="380" stroke="#000000" stroke-width="3.5"/>
+  <line x1="460" y1="380" x2="520" y2="240" stroke="#000000" stroke-width="3.5"/>
 
-  <!-- bb1 to LAN C -->
-  <line x1="660" y1="380" x2="800" y2="320" stroke="#000000" stroke-width="3.5"/>
-  <!-- LAN C to r1 -->
-  <line x1="800" y1="320" x2="940" y2="320" stroke="#000000" stroke-width="3.5"/>
+  <!-- LAN A to bb2 -->
+  <line x1="460" y1="380" x2="520" y2="480" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- bb1 to Link C -->
+  <line x1="560" y1="230" x2="670" y2="210" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- Link C to r1 -->
+  <line x1="670" y1="210" x2="790" y2="210" stroke="#000000" stroke-width="3.5"/>
+
   <!-- r1 to LAN D -->
-  <line x1="940" y1="320" x2="1080" y2="320" stroke="#000000" stroke-width="3.5"/>
+  <line x1="860" y1="210" x2="980" y2="210" stroke="#000000" stroke-width="3.5"/>
 
-  <!-- Dashed lines connecting subnet boxes to collision domains -->
-  <line x1="260" y1="560" x2="260" y2="500" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="520" y1="560" x2="520" y2="500" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="800" y1="240" x2="800" y2="300" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="1080" y1="240" x2="1080" y2="300" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- bb2 to Link E (Area 2) -->
+  <line x1="570" y1="470" x2="670" y2="420" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- Link E to r2 -->
+  <line x1="670" y1="420" x2="790" y2="420" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- r2 to LAN F -->
+  <line x1="860" y1="420" x2="980" y2="420" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- bb2 to Link G (Area 3) -->
+  <line x1="570" y1="500" x2="670" y2="580" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- Link G to r3 -->
+  <line x1="670" y1="580" x2="790" y2="580" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- r3 to LAN H -->
+  <line x1="860" y1="580" x2="980" y2="580" stroke="#000000" stroke-width="3.5"/>
+
+  <!-- Dashed lines connecting Subnet Boxes to Collision Domains -->
+  <!-- LAN B -->
+  <line x1="220" y1="435" x2="220" y2="400" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- LAN A (from above-left) -->
+  <line x1="420" y1="326" x2="455" y2="363" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- Link C -->
+  <line x1="670" y1="255" x2="670" y2="230" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- LAN D -->
+  <line x1="980" y1="165" x2="980" y2="190" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- Link E -->
+  <line x1="670" y1="465" x2="670" y2="440" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- LAN F -->
+  <line x1="980" y1="375" x2="980" y2="400" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- Link G -->
+  <line x1="670" y1="625" x2="670" y2="600" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- LAN H -->
+  <line x1="980" y1="535" x2="980" y2="560" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
 
   <!-- Subnet Boxes -->
-  
-    <g transform="translate(190, 560)">
-      <rect x="0" y="0" width="119" height="26" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="59.5" y="18" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10.0.1.0/24</text>
-    </g>
-    
-  
-    <g transform="translate(450, 560)">
-      <rect x="0" y="0" width="119" height="26" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="59.5" y="18" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10.0.0.0/24</text>
-    </g>
-    
-  
-    <g transform="translate(730, 215)">
-      <rect x="0" y="0" width="128" height="26" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="64.0" y="18" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">100.0.0.0/30</text>
-    </g>
-    
-  
-    <g transform="translate(1010, 215)">
-      <rect x="0" y="0" width="128" height="26" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="64.0" y="18" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">200.0.0.0/24</text>
-    </g>
-    
+  <!-- LAN B: 10.0.1.0/24 -->
+  <g transform="translate(160, 440)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10.0.1.0/24</text>
+  </g>
 
-  <!-- Collision Domains (Circles) -->
-  
-    <g transform="translate(260, 480)">
-      <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
-      <text x="0" y="7" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">B</text>
-    </g>
-    
-  
-    <g transform="translate(520, 480)">
-      <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
-      <text x="0" y="7" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">A</text>
-    </g>
-    
-  
-    <g transform="translate(800, 320)">
-      <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
-      <text x="0" y="7" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">C</text>
-    </g>
-    
-  
-    <g transform="translate(1080, 320)">
-      <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
-      <text x="0" y="7" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">D</text>
-    </g>
-    
+  <!-- LAN A: 10.0.0.0/24 (placed at x=360, y=300 above the link) -->
+  <g transform="translate(360, 300)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10.0.0.0/24</text>
+  </g>
 
-  <!-- Routers -->
-  
-    <g transform="translate(380, 460)" filter="url(#drop-shadow)">
-      <!-- Cylinder side (body) -->
-      <path d="M -40.0 0 L -40.0 20 A 40.0 20.0 0 0 0 40.0 20 L 40.0 0 Z" fill="#0052a3" stroke="#003366" stroke-width="1.5"/>
-      <!-- Cylinder top ellipse -->
-      <ellipse cx="0" cy="0" rx="40.0" ry="20.0" fill="#1a75ff" stroke="#003366" stroke-width="1.5"/>
-      <!-- Router crossing arrows on top -->
-      <g stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="-18" y1="-4" x2="18" y2="4"/>
-        <line x1="-18" y1="4" x2="18" y2="-4"/>
-        <polyline points="-12,-8 -18,-4 -12,0"/>
-        <polyline points="12,8 18,4 12,0"/>
-        <polyline points="-12,8 -18,4 -12,0"/>
-        <polyline points="12,-8 18,-4 12,0"/>
-      </g>
-      <!-- Router Name on front -->
-      <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">bb0</text>
-    </g>
-    
-  
-    <g transform="translate(660, 360)" filter="url(#drop-shadow)">
-      <!-- Cylinder side (body) -->
-      <path d="M -40.0 0 L -40.0 20 A 40.0 20.0 0 0 0 40.0 20 L 40.0 0 Z" fill="#0052a3" stroke="#003366" stroke-width="1.5"/>
-      <!-- Cylinder top ellipse -->
-      <ellipse cx="0" cy="0" rx="40.0" ry="20.0" fill="#1a75ff" stroke="#003366" stroke-width="1.5"/>
-      <!-- Router crossing arrows on top -->
-      <g stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="-18" y1="-4" x2="18" y2="4"/>
-        <line x1="-18" y1="4" x2="18" y2="-4"/>
-        <polyline points="-12,-8 -18,-4 -12,0"/>
-        <polyline points="12,8 18,4 12,0"/>
-        <polyline points="-12,8 -18,4 -12,0"/>
-        <polyline points="12,-8 18,-4 12,0"/>
-      </g>
-      <!-- Router Name on front -->
-      <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">bb1</text>
-    </g>
-    
-  
-    <g transform="translate(940, 300)" filter="url(#drop-shadow)">
-      <!-- Cylinder side (body) -->
-      <path d="M -40.0 0 L -40.0 20 A 40.0 20.0 0 0 0 40.0 20 L 40.0 0 Z" fill="#0052a3" stroke="#003366" stroke-width="1.5"/>
-      <!-- Cylinder top ellipse -->
-      <ellipse cx="0" cy="0" rx="40.0" ry="20.0" fill="#1a75ff" stroke="#003366" stroke-width="1.5"/>
-      <!-- Router crossing arrows on top -->
-      <g stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="-18" y1="-4" x2="18" y2="4"/>
-        <line x1="-18" y1="4" x2="18" y2="-4"/>
-        <polyline points="-12,-8 -18,-4 -12,0"/>
-        <polyline points="12,8 18,4 12,0"/>
-        <polyline points="-12,8 -18,4 -12,0"/>
-        <polyline points="12,-8 18,-4 12,0"/>
-      </g>
-      <!-- Router Name on front -->
-      <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">r1</text>
-    </g>
-    
+  <!-- Link C: 100.0.0.0/30 -->
+  <g transform="translate(615, 260)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">100.0.0.0/30</text>
+  </g>
 
-  <!-- Interface Boxes & OSPF Costs -->
+  <!-- LAN D: 200.0.0.0/24 -->
+  <g transform="translate(925, 140)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">200.0.0.0/24</text>
+  </g>
+
+  <!-- Link E: 110.0.0.0/30 -->
+  <g transform="translate(615, 470)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">110.0.0.0/30</text>
+  </g>
+
+  <!-- LAN F: 210.0.0.0/24 -->
+  <g transform="translate(925, 350)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">210.0.0.0/24</text>
+  </g>
+
+  <!-- Link G: 120.0.0.0/30 -->
+  <g transform="translate(615, 630)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">120.0.0.0/30</text>
+  </g>
+
+  <!-- LAN H: 220.0.0.0/24 -->
+  <g transform="translate(925, 510)">
+    <rect x="0" y="0" width="110" height="26" rx="5" ry="5" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="55" y="18" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">220.0.0.0/24</text>
+  </g>
+
+  <!-- Collision Domains (White Circles with Black Border) -->
+  <!-- B -->
+  <circle cx="220" cy="380" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="220" y="387" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">B</text>
+
+  <!-- A -->
+  <circle cx="460" cy="380" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="460" y="387" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">A</text>
+
+  <!-- C -->
+  <circle cx="670" cy="210" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="670" y="217" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">C</text>
+
+  <!-- D -->
+  <circle cx="980" cy="210" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="980" y="217" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">D</text>
+
+  <!-- E -->
+  <circle cx="670" cy="420" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="670" y="427" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">E</text>
+
+  <!-- F -->
+  <circle cx="980" cy="420" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="980" y="427" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">F</text>
+
+  <!-- G -->
+  <circle cx="670" cy="580" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="670" y="587" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">G</text>
+
+  <!-- H -->
+  <circle cx="980" cy="580" r="18" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+  <text x="980" y="587" fill="#000000" font-size="20" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">H</text>
+
+  <!-- Routers (3D Cylindrical Blue Discs) -->
+  <!-- bb0 at (340, 380) -->
+  <g transform="translate(340, 380)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">bb0</text>
+  </g>
+
+  <!-- bb1 at (530, 230) -->
+  <g transform="translate(530, 230)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">bb1</text>
+  </g>
+
+  <!-- bb2 at (530, 480) -->
+  <g transform="translate(530, 480)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">bb2</text>
+  </g>
+
+  <!-- r1 at (830, 210) -->
+  <g transform="translate(830, 210)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">r1</text>
+  </g>
+
+  <!-- r2 at (830, 420) -->
+  <g transform="translate(830, 420)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">r2</text>
+  </g>
+
+  <!-- r3 at (830, 580) -->
+  <g transform="translate(830, 580)" filter="url(#shadow)">
+    <ellipse cx="0" cy="18" rx="36" ry="18" fill="#004d99"/>
+    <path d="M -36,0 L -36,18 A 36,18 0 0,0 36,18 L 36,0 Z" fill="#005bb5"/>
+    <ellipse cx="0" cy="0" rx="36" ry="18" fill="#0072ce"/>
+    <g stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="-16" y1="-3" x2="16" y2="3"/>
+      <line x1="-16" y1="3" x2="16" y2="-3"/>
+      <polyline points="-10,-7 -16,-3 -10,1"/>
+      <polyline points="10,7 16,3 10,-1"/>
+      <polyline points="-10,7 -16,3 -10,-1"/>
+      <polyline points="10,-7 16,-3 10,1"/>
+    </g>
+    <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">r3</text>
+  </g>
+
+  <!-- Interface / IP Boxes -->
   <!-- bb0 eth1 (towards B) -->
-  
-    <g transform="translate(305, 445)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
-    </g>
-    
-  
-    <g transform="translate(295, 410)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(250, 363)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
 
   <!-- bb0 eth0 (towards A) -->
-  
-    <g transform="translate(425, 445)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
-    </g>
-    
-  
-    <g transform="translate(475, 468)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(385, 363)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
 
   <!-- bb1 eth0 (towards A) -->
-  
-    <g transform="translate(575, 425)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
-    </g>
-    
-  
-    <g transform="translate(550, 455)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(460, 260)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
 
   <!-- bb1 eth1 (towards C) -->
-  
-    <g transform="translate(705, 325)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
-    </g>
-    
-  
-    <g transform="translate(710, 368)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(575, 200)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
+
+  <!-- bb2 eth0 (towards A) -->
+  <g transform="translate(450, 460)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">3</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
+
+  <!-- bb2 eth1 (towards E) -->
+  <g transform="translate(580, 420)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
+
+  <!-- bb2 eth2 (towards G) -->
+  <g transform="translate(580, 520)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth2</text>
+  </g>
 
   <!-- r1 eth0 (towards C) -->
-  
-    <g transform="translate(855, 285)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
-    </g>
-    
-  
-    <g transform="translate(845, 328)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(735, 193)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
 
   <!-- r1 eth1 (towards D) -->
-  
-    <g transform="translate(985, 285)">
-      <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-      <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
-      <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
-      <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
-    </g>
-    
-  
-    <g transform="translate(1035, 308)">
-      <rect x="0" y="0" width="28" height="24" fill="#ffea00" stroke="#000000" stroke-width="1.5"/>
-      <text x="14" y="17" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">10</text>
-    </g>
-    
+  <g transform="translate(875, 193)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
+
+  <!-- r2 eth0 (towards E) -->
+  <g transform="translate(735, 403)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
+
+  <!-- r2 eth1 (towards F) -->
+  <g transform="translate(875, 403)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
+
+  <!-- r3 eth0 (towards G) -->
+  <g transform="translate(735, 563)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">2</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth0</text>
+  </g>
+
+  <!-- r3 eth1 (towards H) -->
+  <g transform="translate(875, 563)">
+    <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+    <line x1="0" y1="17" x2="46" y2="17" stroke="#000000" stroke-width="1"/>
+    <text x="23" y="13" fill="#000000" font-size="13" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">1</text>
+    <text x="23" y="30" fill="#000000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">eth1</text>
+  </g>
 
   <!-- Slide Footer -->
-  
-    <text x="30" y="695" fill="#666666" font-size="11" font-family="Arial, sans-serif">© Computer Networks Research Group<tspan x="30" dy="14">Roma Tre University</tspan></text>
-    <text x="640" y="700" fill="#000000" font-size="14" font-family="Arial, sans-serif" text-anchor="middle">kathara – [ labs: ospf_frr ]</text>
-    <text x="1250" y="700" fill="#000000" font-size="12" font-family="Arial, sans-serif" text-anchor="end">last update: Oct 2023</text>
-    
+  <text x="30" y="695" fill="#595959" font-size="11" font-family="Arial, sans-serif">© Computer Networks Research Group</text>
+  <text x="30" y="708" fill="#595959" font-size="11" font-family="Arial, sans-serif">Roma Tre University</text>
+
+  <text x="640" y="700" fill="#000000" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">kathara – [ labs: ospf_frr ]</text>
+
+  <text x="1250" y="700" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="end">last update: Oct 2023</text>
 </svg>
