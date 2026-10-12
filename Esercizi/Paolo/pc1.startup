@@ -1,0 +1,7 @@
+# Assegnazione indirizzi IP
+ip address add 1.1.0.1/24 dev eth0
+
+ip route add default via 1.1.0.3
+
+# Avvio FRRouting
+# systemctl start frr

@@ -1,0 +1,141 @@
+================================================================================
+                    APPUNTI ESAME - KATHARA & FRROUTING
+================================================================================
+
+--- 1. KATHARA CLI ---
+kathara lstart                     # Avvia il lab
+kathara lclean                      # Pulisce container e reti
+kathara lrestart                    # Riavvia il lab (lclean + lstart)
+kathara connect <nodo>              # Apre shell del nodo (es: kathara connect r1)
+kathara list                        # Mostra lab attivi
+kathara wipe -a                     # SALVAVITA: killa tutti i container bloccati
+
+
+--- 2. HOST & ROUTER (.startup / shell) ---
+# HOST (NO FRR, solo IP e default route):
+ip address add 1.2.0.2/24 dev eth0
+ip route add default via 1.2.0.1
+
+# ROUTER (IP + start FRR):
+ip address add 10.0.0.1/30 dev eth0
+systemctl start frr
+
+# Simula guasto link:
+ip link set eth0 down
+ip link set eth0 up
+
+# Test connettivita':
+ping -c 3 <IP>
+traceroute -n <IP>
+
+# Sniffing tcpdump:
+tcpdump -tenni eth0                 # Traffico generico
+tcpdump -tenni eth0 proto 89         # Solo OSPF
+tcpdump -tenni eth0 udp port 520     # Solo RIP
+
+
+--- 3. VTYSH RAPIDO (da terminale Linux) ---
+vtysh -c "show ip route"
+vtysh -c "show ip ospf neighbor"
+vtysh -c "show ip rip"
+vtysh -e "show ip ospf interface" | egrep "eth|Cost"
+
+
+--- 4. TEMPLATE CONFIGURAZIONE FRR (/etc/frr/frr.conf) ---
+
+[ RIP ]
+router rip
+    network 20.0.0.0/16             # Abilita RIP sulle interfacce nel prefisso
+    route 1.0.0.0/8                 # Inietta rotta verso rete remota
+    route 0.0.0.0/0                 # Inietta default route
+    redistribute connected          # (Solo se richiesto) inietta reti connesse
+log file /var/log/frr/frr.log
+
+[ OSPF SINGLE AREA + COSTI ]
+interface eth0
+    ospf cost 10
+interface eth1
+    ospf cost 50
+router ospf
+    network 10.0.0.0/16 area 0.0.0.0
+log file /var/log/frr/frr.log
+
+[ OSPF INTERCONNECT / ASBR (ROUTING STATICO) ]
+# REGOLA: definire la statica QUI, NON con 'ip route add' in .startup!
+ip route 20.0.0.0/8 10.0.0.2
+router ospf
+    network 1.0.0.0/8 area 0.0.0.0
+    redistribute static
+    redistribute connected          # (Solo se richiesto di redistribuire transito)
+log file /var/log/frr/frr.log
+
+[ OSPF ABR (BACKBONE + STUB) ]
+router ospf
+    network 10.0.0.0/16 area 0.0.0.0
+    network 100.0.0.0/30 area 1.1.1.1
+    area 1.1.1.1 stub
+log file /var/log/frr/frr.log
+
+[ OSPF ROUTER INTERNO STUB ]
+router ospf
+    network 100.0.0.0/30 area 1.1.1.1
+    network 200.0.0.0/24 area 1.1.1.1
+    area 1.1.1.1 stub               # OBBLIGATORIO su TUTTI i router dell'area!
+log file /var/log/frr/frr.log
+
+
+--- 5. DEBUGGING VTYSH ---
+
+# --- OSPF ---
+show ip ospf                        # Router ID e stato generale
+show ip ospf interface [eth0]       # Costi, stato DR/BDR, timer
+show ip ospf neighbor               # Vicini e adiacenze (Full/DR, Full/Backup, 2-Way)
+show ip ospf route                  # Rotte interne SPF (intra O, inter-area O IA)
+show ip ospf database               # Panoramica LSDB
+show ip ospf database router        # Type 1: LSA router
+show ip ospf database network       # Type 2: LSA broadcast/DR
+show ip ospf database summary       # Type 3: LSA inter-area / default stub
+show ip ospf database asbr-summary  # Type 4: LSA verso ASBR
+show ip ospf database external      # Type 5: LSA esterne (NON presenti in stub)
+
+# --- RIP ---
+show ip rip                         # Tabella RIP con metriche e next-hop
+show ip rip status                  # Timer e interfacce attive
+
+# --- ZEBRA / KERNEL ---
+show ip route                       # Tabella di routing globale installata
+# Codici: C=Connected, S=Static, R=RIP, O=OSPF, O IA=Inter-Area, O E2=External
+
+
+--- 6. DOMANDE ESAME (answers.txt) ---
+
+[ 1. Router ID di router X ]
+vtysh -c "show ip ospf" | grep "Router ID"
+# Regola: router-id manuale > max IP loopback > max IP eth fisiche attive
+
+[ 2. Designated Router della LAN X ]
+vtysh -c "show ip ospf interface eth0" | grep -A 2 "Designated Router"
+# Regola: max priority (default 1) > max Router ID
+
+[ 3. Quante 0/0 (default route) in Zebra su router X? ]
+vtysh -c "show ip route" | grep -E "0\.0\.0\.0/0|default"
+# Regola: router interno a Stub = 1 (o num ABR); router in Area 0 (Backbone) = 0
+
+
+--- 7. MODIFICHE AL VOLO (da vtysh senza riavviare) ---
+vtysh
+configure terminal
+interface eth0
+    ip ospf cost 20
+exit
+router ospf
+    area 1.1.1.1 stub
+exit
+exit
+write                               # Salva le modifiche direttamente in frr.conf
+
+
+--- 8. CONSEGNA ARCHIVIO ---
+# Fuori dalla cartella del lab:
+tar -czvf cognome_matricola.tar.gz cognome_matricola
+zip -r cognome_matricola.zip cognome_matricola
