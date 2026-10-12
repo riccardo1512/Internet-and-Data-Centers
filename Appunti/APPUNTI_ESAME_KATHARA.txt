@@ -35,10 +35,13 @@ tcpdump -tenni eth0 udp port 520     # Solo RIP
 
 
 --- 3. VTYSH RAPIDO (da terminale Linux) ---
+vtysh -c "show running-config"      # Configurazione ATTIVA presa dal file (sh run)
 vtysh -c "show ip route"
 vtysh -c "show ip ospf neighbor"
 vtysh -c "show ip rip"
 vtysh -e "show ip ospf interface" | egrep "eth|Cost"
+cat /var/log/frr/frr.log            # Errori di sintassi/parsing di frr.conf
+
 
 
 --- 4. TEMPLATE CONFIGURAZIONE FRR (/etc/frr/frr.conf) ---
