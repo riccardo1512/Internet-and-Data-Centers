@@ -1,802 +1,351 @@
 # APPUNTI E COMANDI ESAME - KATHARÁ & FRROUTING
 
+Guida rapida ai comandi di terminale, debugging e verifica estratti direttamente dalle slide di laboratorio (Computer Networks Research Group - Roma Tre University).
+
 ---
 
 ## 1. COMANDI KATHARÁ (CLI)
 
-Eseguire da terminale all'interno della cartella del lab:
+Da lanciare nel terminale Linux all'interno della cartella del lab:
 
 ```bash
-# Avviare il lab
+# Avviare tutti i nodi del lab
 kathara lstart
 
-# Fermare e ripulire il lab
+# Fermare e ripulire il lab (rimuove container e collision domain)
 kathara lclean
 
-# Riavviare il lab (clean + start)
+# Riavviare il lab (lclean + lstart)
 kathara lrestart
 
 # Entrare nella shell di una macchina specifica
 kathara connect r1
 
-# Elencare i lab attivi
+# Elencare i lab Kathará attualmente in esecuzione
 kathara list
 
-# SALVA-VITA: Rimuove forzatamente TUTTI i container e le reti bloccate
+# SALVA-VITA: Rimuove forzatamente TUTTI i container e le reti Docker/Kathara rimaste bloccate
 kathara wipe -a
 ```
 
 ---
 
-## 2. COMANDI LINUX (STARTUP & TROUBLESHOOTING)
+## 2. COMANDI DI SISTEMA (LINUX SHELL DEI NODI)
 
-Da inserire nei file `.startup` o da lanciare nel terminale dei nodi:
+Comandi da inserire negli script `.startup` o da digitare direttamente nella shell di un router/nodo:
 
-### Configurazione IP e Interfacce
+### 2.1 Indirizzi IP e Interfacce
 ```bash
-# Assegnare indirizzo IP a un'interfaccia
+# Assegnare un indirizzo IP a una scheda di rete (usato nei .startup)
 ip address add 100.1.0.1/30 dev eth0
 ip address add 10.0.0.1/24 dev eth1
 
-# Mostrare gli indirizzi IP configurati
+# Mostrare gli indirizzi IP e lo stato delle interfacce
 ip a
 # oppure:
 ip address show
-
-# Spegnere un'interfaccia (simulazione guasto link)
-ip link set dev eth0 down
-
-# Riaccendere un'interfaccia
-ip link set dev eth0 up
 ```
 
-### Routing Linux
+### 2.2 Routing del Kernel Linux
 ```bash
 # Mostrare la tabella di routing del kernel
 ip route
 
-# Aggiungere una rotta statica
+# Aggiungere una rotta statica (es. su router esterno verso la rete interna)
 ip route add 100.1.0.0/16 via 100.2.0.1
 
-# Aggiungere rotta di default statica
+# Aggiungere la default route statica (es. su border router verso Internet)
 ip route add default via 100.2.0.2
 
-# Eliminare una rotta
+# Eliminare una rotta statica
 ip route del 100.1.0.0/16 via 100.2.0.1
 ```
 
-### Test e Diagnostica
+### 2.3 Simulazione Guasti Link (Slide Style)
 ```bash
-# Test connettività
+# Spegnere un'interfaccia (simula guasto del link o caduta di un DR)
+ip link set eth0 down
+# (oppure forma classica):
+ifconfig eth0 down
+
+# Riaccendere l'interfaccia
+ip link set eth0 up
+# (oppure forma classica):
+ifconfig eth0 up
+```
+
+### 2.4 Test di Connettività e Traceroute
+```bash
+# Ping (test connettività di base con 3 pacchetti)
 ping -c 3 100.1.2.1
 
-# Tracciare il percorso dei pacchetti
+# Traceroute numerico (senza risoluzione DNS per massima velocità)
 traceroute -n 100.1.2.1
+```
 
-# Sniffing pacchetti su interfaccia (standard)
+### 2.5 Packet Sniffing con `tcpdump` (Slide Style)
+```bash
+# Sniffing standard leggibile su un'interfaccia
 tcpdump -tenni eth0
 
-# Sniffing dettagliato con decodifica protocolli (RIP UDP 520 / OSPF IP 89)
+# Sniffing dettagliato con decodifica dei protocolli
 tcpdump -tenni eth0 -v
+
+# Filtrare solo pacchetti OSPF (protocollo IP 89)
+tcpdump -tenni eth0 proto 89
+
+# Filtrare solo pacchetti RIP (porta UDP 520)
+tcpdump -tenni eth0 udp port 520
 ```
 
-### Avvio Demone di Routing
+### 2.6 Demone di Routing FRR
 ```bash
-# Avviare FRRouting (obbligatorio in ogni .startup dei router FRR)
+# Avviare il demone FRRouting (obbligatorio in ogni .startup dei router FRR)
 systemctl start frr
+
+# Verificare che il demone sia attivo e funzionante
+systemctl status frr
 ```
 
 ---
 
-## 3. FILE DI CONFIGURAZIONE STANDARD (TEMPLATE)
+## 3. MODALITÀ DI UTILIZZO DI `vtysh`
 
-### 3.1 `lab.conf`
+`vtysh` è la shell unificata di FRRouting (Cisco-like):
+
 ```bash
-LAB_DESCRIPTION="Esame IRC"
-LAB_VERSION=1.0
-LAB_AUTHOR="Cognome Nome"
-
-# Formato: <macchina>[<interfaccia>]="<DOMINIO_COLLISIONE>"
-r1[0]="A"
-r1[1]="B"
-r1[image]="kathara/frr:9"
-
-r2[0]="B"
-r2[1]="C"
-r2[image]="kathara/frr:9"
-```
-
----
-
-### 3.2 `<router>.startup`
-```bash
-# Assegnazione IP
-ip address add 10.0.0.1/24 dev eth0
-ip address add 10.0.1.1/24 dev eth1
-
-# Eventuale rotta statica o di default (se serve)
-# ip route add default via 10.0.0.2
-
-# Avvio FRRouting
-systemctl start frr
-```
-
----
-
-### 3.3 `/etc/frr/vtysh.conf` (Uguale per tutti i nodi FRR)
-```ini
-service integrated-vtysh-config
-```
-
----
-
-### 3.4 `/etc/frr/daemons` - Template Originale per RIP (Lab di Lezione)
-```ini
-zebra=yes
-bgpd=no
-ospfd=no
-ospf6d=no
-ripd=yes
-ripngd=no
-isisd=no
-pimd=no
-ldpd=no
-nhrpd=no
-eigrpd=no
-babeld=no
-sharpd=no
-staticd=no
-pbrd=no
-bfdd=no
-fabricd=no
-
-# ATTENTION:
-#
-# If this option is set, frr automatically loads
-# the config via "vtysh -b" when the servers are started.
-# Check /etc/pam.d/frr if you intend to use "vtysh"!
-#
-# When using "vtysh" such a config file is also needed. It should be owned by
-# group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
-#
-# The watchfrr, zebra and staticd daemons are always started.
-#
-vtysh_enable=yes
-zebra_options=" -s 90000000 --daemon -A 127.0.0.1"
-bgpd_options="   --daemon -A 127.0.0.1"
-ospfd_options="  --daemon -A 127.0.0.1"
-ospf6d_options=" --daemon -A ::1"
-ripd_options="   --daemon -A 127.0.0.1"
-ripngd_options=" --daemon -A ::1"
-isisd_options="  --daemon -A 127.0.0.1"
-pimd_options="  --daemon -A 127.0.0.1"
-ldpd_options="  --daemon -A 127.0.0.1"
-nhrpd_options="  --daemon -A 127.0.0.1"
-eigrpd_options="  --daemon -A 127.0.0.1"
-babeld_options="  --daemon -A 127.0.0.1"
-sharpd_options="  --daemon -A 127.0.0.1"
-staticd_options="  --daemon -A 127.0.0.1"
-pbrd_options="  --daemon -A 127.0.0.1"
-bfdd_options="  --daemon -A 127.0.0.1"
-fabricd_options="  --daemon -A 127.0.0.1"
-
-#MAX_FDS=1024
-# The list of daemons to watch is automatically generated by the init script.
-#watchfrr_options=""
-
-# for debugging purposes, you can specify a "wrap" command to start instead
-# of starting the daemon directly, e.g. to use valgrind on ospfd:
-#   ospfd_wrap="/usr/bin/valgrind"
-# or you can use "all_wrap" for all daemons, e.g. to use perf record:
-#   all_wrap="/usr/bin/perf record --call-graph -"
-# the normal daemon command is added to this at the end.
-```
-
----
-
-### 3.5 `/etc/frr/daemons` - Template Completo per OSPF
-```ini
-# This file tells the frr package which daemons to start.
-#
-# Sample configurations for these daemons can be found in
-# /usr/share/doc/frr/examples/.
-#
-# ATTENTION:
-#
-# When activating a daemon for the first time, a config file, even if it is
-# empty, has to be present *and* be owned by the user and group "frr", else
-# the daemon will not be started by frr. The permissions should
-# be u=rw,g=r,o=.
-# When using "vtysh" such a config file is also needed. It should be owned by
-# group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
-#
-# The watchfrr, zebra and staticd daemons are always started.
-#
-bgpd=no
-ospfd=yes
-ospf6d=no
-ripd=no
-ripngd=no
-isisd=no
-pimd=no
-pim6d=no
-ldpd=no
-nhrpd=no
-eigrpd=no
-babeld=no
-sharpd=no
-pbrd=no
-bfdd=no
-fabricd=no
-vrrpd=no
-pathd=no
-
-# ATTENTION:
-#
-# If this option is set, frr automatically loads
-# the config via "vtysh -b" when the servers are started.
-# Check /etc/pam.d/frr if you intend to use "vtysh"!
-#
-# When using "vtysh" such a config file is also needed. It should be owned by
-# group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
-#
-# The watchfrr, zebra and staticd daemons are always started.
-#
-vtysh_enable=yes
-zebra_options="  -A 127.0.0.1 -s 90000000"
-mgmtd_options="  -A 127.0.0.1"
-bgpd_options="   -A 127.0.0.1"
-ospfd_options="  -A 127.0.0.1"
-ospf6d_options=" -A ::1"
-ripd_options="   -A 127.0.0.1"
-ripngd_options=" -A ::1"
-isisd_options="  -A 127.0.0.1"
-pimd_options="   -A 127.0.0.1"
-pim6d_options="  -A ::1"
-ldpd_options="   -A 127.0.0.1"
-nhrpd_options="  -A 127.0.0.1"
-eigrpd_options=" -A 127.0.0.1"
-babeld_options=" -A 127.0.0.1"
-sharpd_options=" -A 127.0.0.1"
-pbrd_options="   -A 127.0.0.1"
-staticd_options="-A 127.0.0.1"
-bfdd_options="   -A 127.0.0.1"
-fabricd_options="-A 127.0.0.1"
-vrrpd_options="  -A 127.0.0.1"
-pathd_options="  -A 127.0.0.1"
-
-
-# If you want to pass a common option to all daemons, you can use the
-# "frr_global_options" variable.
-#
-#frr_global_options=""
-
-
-# The list of daemons to watch is automatically generated by the init script.
-# This variable can be used to pass options to watchfrr that will be passed
-# prior to the daemon list.
-#
-# To make watchfrr create/join the specified netns, add the the "--netns"
-# option here. It will only have an effect in /etc/frr/<somename>/daemons, and
-# you need to start FRR with "/usr/lib/frr/frrinit.sh start <somename>".
-#
-#watchfrr_options=""
-
-
-# configuration profile
-#
-#frr_profile="traditional"
-#frr_profile="datacenter"
-
-
-# This is the maximum number of FD's that will be available.  Upon startup this
-# is read by the control files and ulimit is called.  Uncomment and use a
-# reasonable value for your setup if you are expecting a large number of peers
-# in say BGP.
-#
-#MAX_FDS=1024
-
-# Uncomment this option if you want to run FRR as a non-root user. Note that
-# you should know what you are doing since most of the daemons need root
-# to work. This could be useful if you want to run FRR in a container
-# for instance.
-# FRR_NO_ROOT="yes"
-
-# For any daemon, you can specify a "wrap" command to start instead of starting
-# the daemon directly. This will simply be prepended to the daemon invocation.
-# These variables have the form daemon_wrap, where 'daemon' is the name of the
-# daemon (the same pattern as the daemon_options variables).
-#
-# Note that when daemons are started, they are told to daemonize with the `-d`
-# option. This has several implications. For one, the init script expects that
-# when it invokes a daemon, the invocation returns immediately. If you add a
-# wrap command here, it must comply with this expectation and daemonize as
-# well, or the init script will never return. Furthermore, because daemons are
-# themselves daemonized with -d, you must ensure that your wrapper command is
-# capable of following child processes after a fork() if you need it to do so.
-#
-# If your desired wrapper does not support daemonization, you can wrap it with
-# a utility program that daemonizes programs, such as 'daemonize'. An example
-# of this might look like:
-#
-# bgpd_wrap="/usr/bin/daemonize /usr/bin/mywrapper"
-#
-# This is particularly useful for programs which record processes but lack
-# daemonization options, such as perf and rr.
-#
-# If you wish to wrap all daemons in the same way, you may set the "all_wrap"
-# variable.
-#
-#all_wrap=""
-```
-
----
-
-### 3.6 `/etc/frr/frr.conf` - Sintassi e Comandi
-
-#### Caso A: RIPv2
-```text
-!
-router rip
-    network 100.1.0.0/16
-    route 0.0.0.0/0           # Annuncia la default route ai vicini RIP
-    redistribute connected     # Annuncia tutte le reti connesse
-!
-log file /var/log/frr/frr.log
-```
-
-#### Caso B: OSPF Single-Area (Area 0.0.0.0)
-```text
-!
-interface eth0
-    ospf cost 21              # Imposta il costo OSPF dell'interfaccia (default 10)
-interface eth1
-    ospf cost 36
-!
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0
-!
-log file /var/log/frr/frr.log
-```
-
-#### Caso C: OSPF ABR (Area Border Router con Stub Area)
-```text
-!
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0     # Interfaccia verso Backbone
-    network 100.0.0.0/30 area 1.1.1.1    # Interfaccia verso Stub Area
-    area 1.1.1.1 stub                    # Dichiara l'area come STUB
-!
-log file /var/log/frr/frr.log
-```
-
-#### Caso D: OSPF Router Interno Stub Area
-```text
-!
-router ospf
-    network 100.0.0.0/30 area 1.1.1.1
-    network 200.0.0.0/24 area 1.1.1.1
-    area 1.1.1.1 stub                    # Obbligatorio su TUTTI i router dell'area
-!
-log file /var/log/frr/frr.log
-```
-
----
-
-## 4. COMANDI VTYSH (DEBUG & VERIFICA)
-
-Eseguibili dentro `vtysh` o da riga di comando bash con `vtysh -c "<comando>"`.
-
-### Comandi Generali e Tabella di Routing
-```bash
-# Mostrare la tabella di routing di Zebra (FIB)
-vtysh -c "show ip route"
-
-# Configurare al volo dentro vtysh
+# Modalità interattiva (entra nella shell di FRR)
 vtysh
-# configure terminal
-# router rip (o router ospf)
-# ...comandi...
-# exit
-# write
-```
 
-### Comandi Specifici RIP
-```bash
-# Mostrare tabella di routing RIP (metriche, next hop, timer)
-vtysh -c "show ip rip"
-
-# Mostrare stato del protocollo RIP (interfacce, timer, vicini)
-vtysh -c "show ip rip status"
-```
-
-### Comandi Specifici OSPF
-```bash
-# Info generali, Router-ID, aree attive
-vtysh -c "show ip ospf"
-
-# Info interfaccia (DR, BDR, costo, stato DR/BDR/DROther)
-vtysh -c "show ip ospf interface eth0"
-
-# Mostrare costi di tutte le interfacce
-vtysh -e "show ip ospf interface" | egrep "eth|Cost"
-
-# Elenco vicini e stato adiacenza (Full/DR, Full/Backup, Full/DROther)
+# Eseguire un singolo comando da terminale Linux senza entrare (VELOCISSIMO)
+vtysh -c "show ip route"
 vtysh -c "show ip ospf neighbor"
 
-# Tabella di routing interna calcolata da OSPF
-vtysh -c "show ip ospf route"
-
-# Riepilogo Link-State Database (LSDB)
-vtysh -c "show ip ospf database"
-
-# LSA Tipo 1 (Router LSA della propria area)
-vtysh -c "show ip ospf database router"
-
-# LSA Tipo 2 (Network LSA annunciati dai DR)
-vtysh -c "show ip ospf database network"
-
-# LSA Tipo 3 (Summary LSA inter-area e default route stub)
-vtysh -c "show ip ospf database summary"
+# Eseguire comando con filtraggio grep da bash (Slide Style)
+vtysh -e "show ip ospf interface" | egrep "eth|Cost"
 ```
 
 ---
 
-## 5. COMANDI PER LE DOMANDE D'ESAME (`answers.txt`)
+## 4. DEBUGGING RIP (DENTRO `vtysh`)
+
+Da eseguire dentro `vtysh` (o con `vtysh -c "<comando>"`):
+
+```text
+! Mostrare la tabella di routing interna RIP (metriche, next-hop, codici)
+show ip rip
+
+! Mostrare lo stato del protocollo RIP (timer di update/timeout, interfacce attive, vicini)
+show ip rip status
+
+! Mostrare la tabella di routing di Zebra / Kernel (rotte RIP indicate con 'R')
+show ip route
+```
+
+*Codici tipici in `show ip rip`:*
+* `R(n)`: Rotta normale appresa via RIP.
+* `C`: Rete direttamente connessa.
+* `S`: Rotta statica.
+* Metrica 16: Rete irraggiungibile (Infinity).
+
+---
+
+## 5. DEBUGGING OSPF (DENTRO `vtysh`)
+
+### 5.1 Informazioni Generali e Router-ID
+```text
+! Mostrare Router-ID, stato generale del processo OSPF, aree a cui appartiene il router
+show ip ospf
+```
+
+### 5.2 Interfacce e Costi
+```text
+! Dettagli completi di tutte le interfacce OSPF (Cost, MTU, stato DR/BDR, timer)
+show ip ospf interface
+
+! Dettagli di una specifica interfaccia (es. eth0)
+show ip ospf interface eth0
+
+! FILTRO RAPIDO (Slide Style): Mostra solo le interfacce e i rispettivi costi
+! (da bash):
+vtysh -e "show ip ospf interface" | egrep "eth|Cost"
+```
+
+### 5.3 Vicini e Stati di Adiacenza
+```text
+! Mostrare la lista dei router vicini (Neighbor ID, Priorità, Stato, Indirizzo, Interfaccia)
+show ip ospf neighbor
+
+! Dettagli estesi su ciascun vicino
+show ip ospf neighbor detail
+```
+
+*Interpretazione degli stati:*
+* `Full/DR`: Adiacenza completa con il Designated Router.
+* `Full/Backup`: Adiacenza completa con il Backup Designated Router.
+* `2-Way/DROther`: Relazione tra due router ordinari su rete broadcast (non scambiano LSDB completo tra loro, solo con DR/BDR).
+
+### 5.4 Tabelle di Routing OSPF
+```text
+! Rotte interne calcolate dall'algoritmo SPF (intra-area, inter-area IA, costi totali)
+show ip ospf route
+
+! Tabella di routing di Zebra/Kernel (rotte installate nel sistema)
+show ip route
+```
+
+*Codici in `show ip route`:*
+* `O`: Rotta intra-area (stessa area OSPF).
+* `O IA`: Rotta inter-area (appresa da un'altra area tramite ABR).
+* `O E1` / `O E2`: Rotta esterna (iniettata da un ASBR).
+
+### 5.5 Link-State Database (LSDB)
+```text
+! Panoramica sintetica di tutti gli LSA memorizzati nell'LSDB per ciascuna area
+show ip ospf database
+
+! LSA TIPO 1 (Router Link States): Generati da OGNI router per descrivere i propri link nell'area
+show ip ospf database router
+
+! LSA TIPO 2 (Net Link States): Generati solo dai DR per descrivere i router connessi alla LAN broadcast
+show ip ospf database network
+
+! LSA TIPO 3 (Summary Link States): Generati dagli ABR per descrivere le rotte verso altre aree e la default route (0.0.0.0/0) nelle Stub Area
+show ip ospf database summary
+
+! LSA TIPO 4 (ASBR-Summary Link States): Generati dagli ABR per descrivere la rotta verso un ASBR
+show ip ospf database asbr-summary
+
+! LSA TIPO 5 (AS-External Link States): Generati dagli ASBR per rotte esterne (NON presenti nelle Stub Area)
+show ip ospf database external
+```
+
+---
+
+## 6. CHEAT SHEET DOMANDE D'ESAME (`answers.txt`)
 
 ### Domanda 1: *"Which is the router-id of router X?"*
 ```bash
-# Da eseguire su router X:
+# Da lanciare nella shell del router X:
 vtysh -c "show ip ospf" | grep "Router ID"
 ```
-*Regola:* Se non configurato a mano, è l'IP più alto su `lo`; se non c'è `lo`, è l'IP più alto tra tutte le schede `eth` attive del nodo.
+*Regola teorica di elezione del Router-ID:*
+1. Valore esplicito configurato (`router-id X.X.X.X`), se presente.
+2. L'indirizzo IP più alto assegnato a un'interfaccia di loopback (`lo`).
+3. L'indirizzo IP più alto assegnato a una qualunque interfaccia fisica attiva (`ethX`).
 
 ---
 
-### Domanda 2: *"Which is the designated router of LAN G?"*
+### Domanda 2: *"Which is the designated router of LAN X?"*
 ```bash
-# Da eseguire su uno dei router connessi a quella LAN (es. su eth0):
+# Da lanciare su uno qualunque dei router connessi a quella LAN (es. su eth0):
 vtysh -c "show ip ospf interface eth0" | grep -A 2 "Designated Router"
 ```
-*Regola:* Vince chi ha priorità più alta (default 1). A parità di priorità, vince chi ha il **Router-ID più alto**.
+*Regola teorica di elezione del DR:*
+1. Vince il router con la **priorità OSPF più alta** (default: 1; se impostata a 0 il router non può diventare DR).
+2. A parità di priorità, vince il router con il **Router-ID più alto**.
 
 ---
 
 ### Domanda 3: *"How many 0/0 (default route) entries can be found in the zebra routing table of router X?"*
 ```bash
-# Da eseguire su router X:
+# Da lanciare nella shell del router X:
 vtysh -c "show ip route" | grep -E "0\.0\.0\.0/0|default"
 # oppure da bash:
 ip route | grep default
 ```
-*Regola:*
-- Router in area **STUB**: riceve automaticamente `0.0.0.0/0` dall'ABR ($\rightarrow$ conta quante righe `via ...`).
-- Router nel **Backbone (Area 0)**: di norma ha **0** entry (il backbone non riceve la default route generata per le stub).
+*Regola teorica:*
+* **Router interno a una Stub Area**: riceve la default route generata dall'ABR tramite LSA Tipo 3 ($\rightarrow$ conta quante righe `via ...` compaiono; tipicamente **1**, o di più se ci sono ABR multipli ridondati).
+* **Router nel Backbone (Area 0.0.0.0)**: di norma ha **0** entry (il Backbone non riceve la default route generata per le stub aree).
 
 ---
 
-## 6. I 3 LAB DI ESEMPIO COMPLETI
+## 7. SINTASSI RAPIDA DEI FILE DI CONFIGURAZIONE (`frr.conf`)
 
-Cartella sul sistema: `Appunti/lab-esempi/`
+Promemoria rapido delle parole chiave da usare nei file `/etc/frr/frr.conf`:
 
----
-
-### LAB 1: RIPv2 con Default Route
-Topologia: `r1` (interno) $\leftrightarrow$ [LAN B: 100.1.0.0/30] $\leftrightarrow$ `r2` (border) $\leftrightarrow$ [LAN C: 100.2.0.0/30] $\leftrightarrow$ `r3` (router esterno/Internet).
-
-![Architettura Lab 1 - RIP](lab-esempi/lab1-rip/topology.png)
-
-#### `lab.conf`
-```bash
-r1[0]="A"
-r1[1]="B"
-r1[image]="kathara/frr:9"
-
-r2[0]="B"
-r2[1]="C"
-r2[image]="kathara/frr:9"
-
-r3[0]="C"
-r3[image]="kathara/frr:9"
-```
-
-#### `r1.startup`
-```bash
-ip address add 100.1.1.1/24 dev eth0
-ip address add 100.1.0.1/30 dev eth1
-systemctl start frr
-```
-
-#### `r1/etc/frr/frr.conf`
+### 7.1 Configurazione RIP
 ```text
+! /etc/frr/frr.conf per RIP
 router rip
+    ! Annunciare tutte le interfacce che ricadono nel prefisso
     network 100.1.0.0/16
-log file /var/log/frr/frr.log
-```
-
-#### `r2.startup` (Border Router della LAN interna)
-```bash
-ip address add 100.1.0.2/30 dev eth0
-ip address add 100.2.0.1/30 dev eth1
-
-# Rotta statica di DEFAULT (Outbound traffic): instrada tutto verso il router esterno r3
-ip route add default via 100.2.0.2
-
-systemctl start frr
-```
-
-#### `r2/etc/frr/frr.conf`
-```text
-router rip
-    network 100.1.0.0/16
+    ! (Opzionale sul border router): propagare la default route ai vicini
     route 0.0.0.0/0
+    ! (Opzionale sul border router): redistribuire le reti connesse
     redistribute connected
 log file /var/log/frr/frr.log
 ```
 
-#### `r3.startup` (Router esterno / out)
-```bash
-# Interfaccia verso r2
-ip address add 100.2.0.2/30 dev eth0
-
-# Rotta statica verso la LAN interna (Inbound traffic): instrada la rete 100.1.0.0/16 via r2
-ip route add 100.1.0.0/16 via 100.2.0.1
-```
-
----
-
-### LAB 2: OSPF Single-Area (Area 0.0.0.0) con Costi e DR/BDR
-Topologia: `bb0`, `bb1`, `bb2` connessi su LAN A broadcast (10.0.0.0/24). Link alternativo LAN B tra `bb0` e `bb1` con costo 50.
-
-![Architettura Lab 2 - OSPF Single Area](lab-esempi/lab2-ospf-singlearea/topology.png)
-
-#### `lab.conf`
-```bash
-bb0[0]="A"
-bb0[1]="B"
-bb0[image]="kathara/frr:9"
-
-bb1[0]="A"
-bb1[1]="B"
-bb1[image]="kathara/frr:9"
-
-bb2[0]="A"
-bb2[1]="C"
-bb2[image]="kathara/frr:9"
-```
-
-#### `bb0.startup`
-```bash
-ip address add 10.0.0.1/24 dev eth0
-ip address add 10.0.1.1/24 dev eth1
-systemctl start frr
-```
-
-#### `bb0/etc/frr/frr.conf`
+### 7.2 Configurazione OSPF (Backbone & Costi)
 ```text
+! /etc/frr/frr.conf per OSPF Single-Area con costi
 interface eth0
     ospf cost 10
 interface eth1
     ospf cost 50
+
 router ospf
+    ! Abilitare OSPF su tutte le interfacce con IP in questo prefisso
     network 10.0.0.0/16 area 0.0.0.0
 log file /var/log/frr/frr.log
 ```
 
-#### `bb1.startup`
-```bash
-ip address add 10.0.0.2/24 dev eth0
-ip address add 10.0.1.2/24 dev eth1
-systemctl start frr
-```
-
-#### `bb1/etc/frr/frr.conf`
+### 7.3 Configurazione OSPF ABR (Backbone + Stub Area)
 ```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 50
+! /etc/frr/frr.conf per router ABR
 router ospf
+    ! Interfacce nel Backbone
     network 10.0.0.0/16 area 0.0.0.0
-log file /var/log/frr/frr.log
-```
-
-#### `bb2.startup`
-```bash
-ip address add 10.0.0.3/24 dev eth0
-ip address add 10.0.2.1/24 dev eth1
-systemctl start frr
-```
-
-#### `bb2/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0
-log file /var/log/frr/frr.log
-```
-
----
-
-### LAB 3: OSPF Multi-Area con 3 Stub Aree (Backbone 0, Stub 1.1.1.1, Stub 2.2.2.2, Stub 3.3.3.3)
-Topologia completa per tutti i casi d'esame:
-* `bb0`: Router puramente interno di Backbone (Area 0.0.0.0).
-* `bb1`: **ABR mono-stub**, connette il Backbone ad Area 1.1.1.1 (`r1`).
-* `bb2`: **ABR multi-stub**, connette il Backbone sia ad Area 2.2.2.2 (`r2`) sia ad Area 3.3.3.3 (`r3`).
-* `r1`, `r2`, `r3`: Router interni delle rispettive aree Stub con LAN dedicate.
-
-![Architettura Lab 3 - OSPF Multi-Area Stub](lab-esempi/lab3-ospf-multiarea-stub/topology.png)
-
-#### `lab.conf`
-```bash
-# bb0: Backbone router
-bb0[0]="A"
-bb0[1]="B"
-bb0[image]="kathara/frr:9"
-
-# bb1: ABR (Area 0 + Area 1.1.1.1)
-bb1[0]="A"
-bb1[1]="C"
-bb1[image]="kathara/frr:9"
-
-# bb2: ABR multi-stub (Area 0 + Area 2.2.2.2 + Area 3.3.3.3)
-bb2[0]="A"
-bb2[1]="E"
-bb2[2]="G"
-bb2[image]="kathara/frr:9"
-
-# r1: Stub router (Area 1.1.1.1)
-r1[0]="C"
-r1[1]="D"
-r1[image]="kathara/frr:9"
-
-# r2: Stub router (Area 2.2.2.2)
-r2[0]="E"
-r2[1]="F"
-r2[image]="kathara/frr:9"
-
-# r3: Stub router (Area 3.3.3.3)
-r3[0]="G"
-r3[1]="H"
-r3[image]="kathara/frr:9"
-```
-
-#### `bb0.startup` (Backbone Router)
-```bash
-ip address add 10.0.0.1/24 dev eth0
-ip address add 10.0.1.1/24 dev eth1
-systemctl start frr
-```
-
-#### `bb0/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0
-log file /var/log/frr/frr.log
-```
-
-#### `bb1.startup` (ABR: Area 0 + Area 1)
-```bash
-ip address add 10.0.0.2/24 dev eth0
-ip address add 100.0.0.1/30 dev eth1
-systemctl start frr
-```
-
-#### `bb1/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0
+    ! Interfacce nella Stub Area 1.1.1.1
     network 100.0.0.0/30 area 1.1.1.1
+    ! Dichiarare l'area come Stub
     area 1.1.1.1 stub
 log file /var/log/frr/frr.log
 ```
 
-#### `bb2.startup` (ABR multi-stub: Area 0 + Area 2 + Area 3)
-```bash
-ip address add 10.0.0.3/24 dev eth0
-ip address add 110.0.0.1/30 dev eth1
-ip address add 120.0.0.1/30 dev eth2
-systemctl start frr
-```
-
-#### `bb2/etc/frr/frr.conf`
+### 7.4 Configurazione OSPF Router Interno Stub
 ```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-interface eth2
-    ospf cost 10
-router ospf
-    network 10.0.0.0/16 area 0.0.0.0
-    network 110.0.0.0/30 area 2.2.2.2
-    network 120.0.0.0/30 area 3.3.3.3
-    area 2.2.2.2 stub
-    area 3.3.3.3 stub
-log file /var/log/frr/frr.log
-```
-
-#### `r1.startup` (Internal Router: Stub Area 1.1.1.1)
-```bash
-ip address add 100.0.0.2/30 dev eth0
-ip address add 200.0.0.1/24 dev eth1
-systemctl start frr
-```
-
-#### `r1/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
+! /etc/frr/frr.conf per router interno alla Stub
 router ospf
     network 100.0.0.0/30 area 1.1.1.1
     network 200.0.0.0/24 area 1.1.1.1
+    ! Fondamentale: deve essere dichiarato stub su TUTTI i router dell'area!
     area 1.1.1.1 stub
-log file /var/log/frr/frr.log
-```
-
-#### `r2.startup` (Internal Router: Stub Area 2.2.2.2)
-```bash
-ip address add 110.0.0.2/30 dev eth0
-ip address add 210.0.0.1/24 dev eth1
-systemctl start frr
-```
-
-#### `r2/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-router ospf
-    network 110.0.0.0/30 area 2.2.2.2
-    network 210.0.0.0/24 area 2.2.2.2
-    area 2.2.2.2 stub
-log file /var/log/frr/frr.log
-```
-
-#### `r3.startup` (Internal Router: Stub Area 3.3.3.3)
-```bash
-ip address add 120.0.0.2/30 dev eth0
-ip address add 220.0.0.1/24 dev eth1
-systemctl start frr
-```
-
-#### `r3/etc/frr/frr.conf`
-```text
-interface eth0
-    ospf cost 10
-interface eth1
-    ospf cost 10
-router ospf
-    network 120.0.0.0/30 area 3.3.3.3
-    network 220.0.0.0/24 area 3.3.3.3
-    area 3.3.3.3 stub
 log file /var/log/frr/frr.log
 ```
 
 ---
 
-## 7. CONSEGNA DEL LAB
+## 8. CONFIGURAZIONE AL VOLO DA `vtysh` (SENZA RIAVVIARE)
 
-Dalla cartella principale (fuori dalla cartella del lab):
+Se durante l'esame vuoi modificare una configurazione senza riavviare il lab:
+
+```text
+vtysh
+# configure terminal
+(config)# interface eth1
+(config-if)# ip ospf cost 45
+(config-if)# exit
+(config)# router ospf
+(config-router)# area 2.2.2.2 stub
+(config-router)# exit
+(config)# exit
+# write
+```
+*(Il comando `write` salva la configurazione corrente direttamente nel file `frr.conf`).*
+
+---
+
+## 9. CONSEGNA DEL LAB
+
+Da lanciare dal terminale nella cartella superiore (fuori dalla cartella del compito d'esame):
 
 ```bash
-# Formato tar.gz
-tar -czvf cognomenome.tar.gz cognomenome
+# Archivio compresso tar.gz (standard di consegna)
+tar -czvf cognome_matricola.tar.gz cognome_matricola
 
-# Formato zip
-zip -r cognomenome.zip cognomenome
+# Oppure formato zip (se richiesto)
+zip -r cognome_matricola.zip cognome_matricola
 ```
+
