@@ -52,7 +52,7 @@
 
   <!-- Link r2 to C -->
   <line x1="720" y1="380" x2="880" y2="380" stroke="#000000" stroke-width="3.5"/>
-  <!-- Link C to rext -->
+  <!-- Link C to r3 -->
   <line x1="880" y1="380" x2="1020" y2="280" stroke="#000000" stroke-width="3.5"/>
 
   <!-- Dashed lines connecting subnet boxes to collision domains -->
@@ -155,7 +155,7 @@
         <polyline points="12,-8 18,-4 12,0"/>
       </g>
       <!-- Router Name on front -->
-      <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">rext</text>
+      <text x="0" y="16" fill="#ffffff" font-size="18" font-family="'Arial Black', Arial, sans-serif" font-weight="900" text-anchor="middle">r3</text>
     </g>
     
 
@@ -198,7 +198,7 @@
     </g>
     
 
-  <!-- rext eth0 (towards C) -->
+  <!-- r3 eth0 (towards C) -->
   
     <g transform="translate(960, 290)">
       <rect x="0" y="0" width="46" height="34" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>

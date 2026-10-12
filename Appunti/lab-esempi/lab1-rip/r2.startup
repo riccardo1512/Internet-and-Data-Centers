@@ -2,7 +2,7 @@
 ip address add 100.1.0.2/30 dev eth0
 ip address add 100.2.0.1/30 dev eth1
 
-# Default route verso il router esterno (Internet stub)
+# Rotta statica di DEFAULT (Outbound traffic): instrada tutto il traffico esterno verso il router out r3
 ip route add default via 100.2.0.2
 
 # Avvio FRRouting

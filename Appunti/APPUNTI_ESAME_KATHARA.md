@@ -482,7 +482,7 @@ Cartella sul sistema: `Appunti/lab-esempi/`
 ---
 
 ### LAB 1: RIPv2 con Default Route
-Topologia: `r1` (interno) $\leftrightarrow$ [LAN B: 100.1.0.0/30] $\leftrightarrow$ `r2` (border) $\leftrightarrow$ [LAN C: 100.2.0.0/30] $\leftrightarrow$ `rext` (Internet).
+Topologia: `r1` (interno) $\leftrightarrow$ [LAN B: 100.1.0.0/30] $\leftrightarrow$ `r2` (border) $\leftrightarrow$ [LAN C: 100.2.0.0/30] $\leftrightarrow$ `r3` (router esterno/Internet).
 
 ![Architettura Lab 1 - RIP](lab-esempi/lab1-rip/topology.png)
 
@@ -496,8 +496,8 @@ r2[0]="B"
 r2[1]="C"
 r2[image]="kathara/frr:9"
 
-rext[0]="C"
-rext[image]="kathara/frr:9"
+r3[0]="C"
+r3[image]="kathara/frr:9"
 ```
 
 #### `r1.startup`
@@ -514,11 +514,14 @@ router rip
 log file /var/log/frr/frr.log
 ```
 
-#### `r2.startup`
+#### `r2.startup` (Border Router della LAN interna)
 ```bash
 ip address add 100.1.0.2/30 dev eth0
 ip address add 100.2.0.1/30 dev eth1
+
+# Rotta statica di DEFAULT (Outbound traffic): instrada tutto verso il router esterno r3
 ip route add default via 100.2.0.2
+
 systemctl start frr
 ```
 
@@ -531,9 +534,12 @@ router rip
 log file /var/log/frr/frr.log
 ```
 
-#### `rext.startup`
+#### `r3.startup` (Router esterno / out)
 ```bash
+# Interfaccia verso r2
 ip address add 100.2.0.2/30 dev eth0
+
+# Rotta statica verso la LAN interna (Inbound traffic): instrada la rete 100.1.0.0/16 via r2
 ip route add 100.1.0.0/16 via 100.2.0.1
 ```
 
