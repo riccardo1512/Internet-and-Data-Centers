@@ -30,23 +30,26 @@ traceroute -n <IP>
 
 # Sniffing tcpdump:
 tcpdump -tenni eth0                 # Traffico generico
-tcpdump -tenni eth0 proto 89         # Solo OSPF
-tcpdump -tenni eth0 udp port 520     # Solo RIP
+tcpdump -tenni eth0 proto 89         # Solo OSPF (IP proto 89)
+tcpdump -tenni eth0 udp port 520     # Solo RIP (UDP 520)
+tcpdump -tenni eth0 tcp port 179     # Solo BGP (TCP 179)
 
 
 --- 3. VTYSH RAPIDO (da terminale Linux) ---
 vtysh -c "show running-config"      # Configurazione ATTIVA presa dal file (sh run)
-vtysh -c "show ip route"
-vtysh -c "show ip ospf neighbor"
-vtysh -c "show ip rip"
+vtysh -c "show ip route"            # Tabella di routing globale (Zebra)
+vtysh -c "show ip ospf neighbor"    # Vicini OSPF
+vtysh -c "show ip rip"              # Tabella RIP interna
+vtysh -c "show ip bgp summary"      # Stato sessioni e vicini BGP
+vtysh -c "show ip bgp"              # Tabella BGP (rotte, AS-Path, next-hop)
 vtysh -e "show ip ospf interface" | egrep "eth|Cost"
 cat /var/log/frr/frr.log            # Errori di sintassi/parsing di frr.conf
-
 
 
 --- 4. TEMPLATE CONFIGURAZIONE FRR (/etc/frr/frr.conf) ---
 
 [ RIP ]
+# daemons: ripd=yes
 router rip
     network 20.0.0.0/16             # Abilita RIP sulle interfacce nel prefisso
     route 1.0.0.0/8                 # Inietta rotta verso rete remota
@@ -55,6 +58,7 @@ router rip
 log file /var/log/frr/frr.log
 
 [ OSPF SINGLE AREA + COSTI ]
+# daemons: ospfd=yes
 interface eth0
     ospf cost 10
 interface eth1
@@ -86,8 +90,152 @@ router ospf
     area 1.1.1.1 stub               # OBBLIGATORIO su TUTTI i router dell'area!
 log file /var/log/frr/frr.log
 
+[ BGP BASE (eBGP & iBGP) ]
+# daemons: bgpd=yes
+router bgp 100
+    ! no bgp ebgp-requires-policy     # Decommentare se NON si usano filtri in/out (altrimenti FRR blocca eBGP)
+    no bgp network import-check       # Permette di annunciare network senza match esatto in tabella IGP
+    !
+    ! Vicino eBGP (AS differente):
+    neighbor 11.0.0.2 remote-as 200
+    neighbor 11.0.0.2 description Router eBGP
+    !
+    ! Vicino iBGP (Stesso AS) - OBBLIGATORIO next-hop-self:
+    neighbor 200.1.0.2 remote-as 100
+    neighbor 200.1.0.2 description Router iBGP interno
+    neighbor 200.1.0.2 next-hop-self
+    !
+    ! Inviare la default route a un cliente/stub:
+    neighbor 11.0.0.2 default-originate
+    !
+    ! Prefisso proprio da annunciare:
+    network 100.1.0.0/16
+log file /var/log/frr/frr.log
+
+[ BGP POLICIES: PREFIX-LIST ]
+# Sintassi filtri prefissi:
+ip prefix-list <NOME> permit 100.1.0.0/16
+ip prefix-list <NOME> permit 200.1.0.0/16 le 24      # Da /16 fino a /24 comprese
+ip prefix-list <NOME> permit 10.0.0.0/8 ge 16 le 24  # Maschere tra /16 e /24
+ip prefix-list <NOME> deny 192.168.1.0/24
+ip prefix-list <NOME> permit 0.0.0.0/0               # Solo la default route
+ip prefix-list <NOME> permit any                     # Qualsiasi prefisso (0.0.0.0/0 le 32)
+!
+# Applicazione sul vicino BGP (in ingresso o uscita):
+router bgp 100
+    ! no bgp ebgp-requires-policy
+    no bgp network import-check
+    neighbor 11.0.0.2 prefix-list <NOME> in
+    neighbor 11.0.0.2 prefix-list <NOME> out
+
+[ BGP POLICIES: AS-PATH ACCESS-LIST & REGEX ]
+# Sintassi filtro AS-Path:
+bgp as-path access-list <NOME> permit <REGEXP>
+bgp as-path access-list <NOME> deny <REGEXP>
+!
+# Applicazione sul vicino BGP con filter-list:
+router bgp 100
+    ! no bgp ebgp-requires-policy
+    no bgp network import-check
+    neighbor 11.0.0.2 filter-list <NOME> in
+    neighbor 11.0.0.2 filter-list <NOME> out
+!
+# --- TABELLA REGEX AS-PATH (MEMORIZZARE PER ESAME) ---
+# Simboli:
+#   ^  = inizio stringa AS-Path
+#   $  = fine stringa AS-Path
+#   _  = delimitatore (spazio, inizio, fine, virgola)
+#   .  = qualsiasi singolo carattere
+#   *  = 0 o più ripetizioni
+#   +  = 1 o più ripetizioni
+#   ?  = 0 o 1 ripetizione
+#   [] = range di caratteri (es: [0-9])
+#   |  = OR logico (es: 100|200)
+#
+# Pattern Tipici Esame:
+#   ^$          Rotte originate LOCALMENTE (AS-Path vuoto)
+#   _100_       Rotte che TRANSITANO per l'AS 100 (in qualunque posizione)
+#   ^100_       Rotte RICEVUTE DIRETTAMENTE dall'AS 100 vicino
+#   _100$       Rotte ORIGINATE dall'AS 100 (AS 100 è all'estremità destra)
+#   ^100$       Rotte sia originate sia ricevute direttamente da AS 100 (lunghezza 1)
+#   ^[0-9]+$    Rotte originate da QUALSIASI vicino direttamente connesso (lunghezza 1)
+#   .*          QUALSIASI rotta (permette tutto)
+
+[ BGP POLICIES: ROUTE-MAP ]
+# Inbound: modifica Local Preference per scegliere da dove USCIRE dall'AS
+route-map setLocalPref permit 10
+    match ip address prefix-list <NOME>
+    set local-preference 150        # Più ALTO vince (default: 100, solo iBGP)
+!
+# Outbound: allunga AS-Path o imposta MED per influenzare come ENTRANO gli altri
+route-map tuneOutbound permit 10
+    match as-path <NOME_ACL>
+    set metric 50                   # MED: più BASSO vince (comunicato ai vicini eBGP)
+    set as-path prepend 100 100     # Aggiunge 2 volte il proprio AS per allungare il path
+    set community 100:10            # Tagga con community BGP
+!
+# Regola deny in route-map (scarta tutto ciò che matcha):
+route-map filtroTotale deny 10
+    match as-path <NOME_ACL>
+route-map filtroTotale permit 20    # Lascia passare il resto
+!
+# Applicazione sul vicino BGP:
+router bgp 100
+    ! no bgp ebgp-requires-policy
+    no bgp network import-check
+    neighbor 11.0.0.2 route-map setLocalPref in
+    neighbor 11.0.0.2 route-map tuneOutbound out
+
+[ BGP + RIP INTERPLAY (LOAD SHARING & REDISTRIBUZIONE) ]
+# Border Router: daemons -> bgpd=yes, ripd=yes
+router rip
+    network 100.1.0.0/16
+    redistribute bgp                # Inietta la default route BGP dentro RIP
+!
+router bgp 100
+    ! no bgp ebgp-requires-policy
+    no bgp network import-check
+    neighbor 11.0.0.1 remote-as 10
+    neighbor 11.0.0.1 prefix-list mineOut out
+    neighbor 11.0.0.1 prefix-list defaultIn in
+    !
+    ! Ingress Load Sharing (Border 1 annuncia /17 bassa, Border 2 /17 alta, entrambi /16 backup):
+    network 100.1.0.0/16            # Backup globale
+    network 100.1.0.0/17            # Primario prima metà (su Border 1)
+    ! (su Border 2 mettere invece: network 100.1.128.0/17)
+!
+ip prefix-list mineOut permit 100.1.0.0/16
+ip prefix-list mineOut permit 100.1.0.0/17
+ip prefix-list defaultIn permit 0.0.0.0/0
+
+[ BGP + OSPF INTERPLAY ]
+# Gateway Router: daemons -> bgpd=yes, ospfd=yes
+interface eth1
+    ospf cost 10
+!
+router ospf
+    network 10.0.0.0/16 area 0.0.0.0
+    default-information originate always   # Inietta la default route dentro OSPF (always non attende match nella FIB)
+    ! redistribute connected
+!
+router bgp 100
+    ! no bgp ebgp-requires-policy
+    no bgp network import-check
+    neighbor 11.0.0.1 remote-as 10
+    neighbor 11.0.0.1 prefix-list defaultIn in
+    network 10.0.0.0/16             # Annuncia il prefisso dell'AS su Internet
+!
+ip prefix-list defaultIn permit 0.0.0.0/0
+
 
 --- 5. DEBUGGING VTYSH ---
+
+# --- BGP ---
+show ip bgp summary                 # Stato sessioni: se PfxRcd è numero = UP; Active/Idle = DOWN
+show ip bgp                         # Tabella BGP: * = valida, > = best path installata in Zebra
+show ip bgp <NET/MASK>              # Dettagli rotta (AS-Path esatto, MED, Local-Pref, Communities)
+show ip bgp neighbor <IP> advertised-routes # Prefissi annunciati verso quel vicino
+show ip bgp neighbor <IP> routes    # Prefissi ricevuti da quel vicino
 
 # --- OSPF ---
 show ip ospf                        # Router ID e stato generale
@@ -107,7 +255,7 @@ show ip rip status                  # Timer e interfacce attive
 
 # --- ZEBRA / KERNEL ---
 show ip route                       # Tabella di routing globale installata
-# Codici: C=Connected, S=Static, R=RIP, O=OSPF, O IA=Inter-Area, O E2=External
+# Codici: C=Connected, S=Static, R=RIP, O=OSPF, B=BGP, O IA=Inter-Area, O E2=External
 
 
 --- 6. DOMANDE ESAME (answers.txt) ---
@@ -124,15 +272,30 @@ vtysh -c "show ip ospf interface eth0" | grep -A 2 "Designated Router"
 vtysh -c "show ip route" | grep -E "0\.0\.0\.0/0|default"
 # Regola: router interno a Stub = 1 (o num ABR); router in Area 0 (Backbone) = 0
 
+[ 4. BGP Decision Process (Come viene scelto il Best Path '>') ]
+# In ordine di precedenza:
+# 1. Weight (locale Cisco/FRR, più alto vince)
+# 2. Local Preference (scambiata in iBGP, più ALTO vince, default 100)
+# 3. Locally Originated (rotta generata da network/redistribute locale vince su appresa)
+# 4. AS-Path Length (AS-Path più CORTO vince; prepending serve ad allungarlo)
+# 5. Origin Type (IGP [i] vince su EGP [e] che vince su Incomplete [?])
+# 6. MED / Multi-Exit Discriminator (inviato tra AS adiacenti, più BASSO vince)
+# 7. eBGP path vince su iBGP path
+# 8. Minor costo IGP per raggiungere il BGP next-hop
+# 9. Router-ID BGP più basso
+
+[ 5. Stato sessione BGP con vicino X ]
+vtysh -c "show ip bgp summary"
+# Se sotto 'State/PfxRcd' c'è un NUMERO (es: 0, 1, 5) -> sessione ESTABLISHED
+# Se c'è scritto 'Active' o 'Connect' -> TCP handshake fallito / non risponde
+# Se c'è scritto 'Idle' -> sessione disabilitata / amministrativamente giù
+
 
 --- 7. MODIFICHE AL VOLO (da vtysh senza riavviare) ---
 vtysh
 configure terminal
-interface eth0
-    ip ospf cost 20
-exit
-router ospf
-    area 1.1.1.1 stub
+router bgp 100
+    neighbor 11.0.0.1 default-originate
 exit
 exit
 write                               # Salva le modifiche direttamente in frr.conf

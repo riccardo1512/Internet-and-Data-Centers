@@ -1,0 +1,2 @@
+ip address add 11.0.0.5/30 dev eth0
+systemctl start frr
