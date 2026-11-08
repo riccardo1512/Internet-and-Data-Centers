@@ -48,7 +48,9 @@ cat /var/log/frr/frr.log            # Errori di sintassi/parsing di frr.conf
 
 
 
---- 4. CONFIGURAZIONE RIP (/etc/frr/frr.conf) ---
+================================================================================
+                                    RIP
+================================================================================
 # daemons: ripd=yes, zebra=yes
 
 [ RIP BASE ]
@@ -85,7 +87,9 @@ log file /var/log/frr/frr.log
 
 
 
---- 5. CONFIGURAZIONE OSPF (/etc/frr/frr.conf) ---
+================================================================================
+                                   OSPF
+================================================================================
 # daemons: ospfd=yes, zebra=yes
 
 [ OSPF SINGLE AREA + COSTI INTERFACCIA ]
@@ -96,6 +100,15 @@ interface eth1
 
 router ospf
     network 10.0.0.0/16 area 0.0.0.0
+log file /var/log/frr/frr.log
+
+
+[ OSPF CON ANNUNCIO LOOPBACK (PER iBGP) ]
+# Se l'AS usa OSPF come IGP interno e si fa peering iBGP su Loopback:
+# Basta dichiarare la propria loopback nell'area backbone di OSPF:
+router ospf
+    network 10.0.0.0/16 area 0.0.0.0       # Sottoreti fisiche interne dell'AS
+    network 1.1.1.1/32 area 0.0.0.0        # Annuncia la Loopback in OSPF (Type 1 LSA)
 log file /var/log/frr/frr.log
 
 
@@ -126,7 +139,9 @@ log file /var/log/frr/frr.log
 
 
 
---- 6. CONFIGURAZIONE BGP BASE (/etc/frr/frr.conf) ---
+================================================================================
+                                    BGP
+================================================================================
 # daemons: bgpd=yes, zebra=yes
 
 [ BGP STANDARD (PEERING SU LINK FISICO) ]
@@ -172,10 +187,7 @@ log file /var/log/frr/frr.log
 # Tra AS differenti (eBGP) si usa SEMPRE l'IP fisico del cavo /30. Tra AS diversi non si usa mai RIP.
 
 
-
---- 7. BGP POLICIES (/etc/frr/frr.conf) ---
-
-[ 1. PREFIX-LIST (FILTRO PREFISSI IP) ]
+[ 1. BGP POLICIES: PREFIX-LIST (FILTRO PREFISSI IP) ]
 # Sintassi definizioni:
 ip prefix-list <NOME> permit 100.1.0.0/16
 ip prefix-list <NOME> permit 200.1.0.0/16 le 24      # Da /16 fino a /24 comprese
@@ -190,7 +202,7 @@ router bgp 100
     neighbor 11.0.0.2 prefix-list <NOME> out
 
 
-[ 2. AS-PATH ACCESS-LIST (FILTRO PERCORSI AS) ]
+[ 2. BGP POLICIES: AS-PATH ACCESS-LIST (FILTRO PERCORSI AS) ]
 # Sintassi definizioni:
 bgp as-path access-list <NOME> permit <REGEXP>
 bgp as-path access-list <NOME> deny <REGEXP>
@@ -214,7 +226,7 @@ router bgp 100
 #
 # Pattern Tipici Esame:
 #   ^$          Rotte originate LOCALMENTE (AS-Path vuoto)
-#   _100_       Rotte che TRA6NSITANO per AS 100 (in qualsiasi posizione)
+#   _100_       Rotte che TRANSITANO per AS 100 (in qualsiasi posizione)
 #   ^100_       Rotte RICEVUTE DIRETTAMENTE da AS 100 vicino
 #   _100$       Rotte ORIGINATE da AS 100 (AS 100 all'estremita' destra)
 #   ^100$       Rotte sia originate sia ricevute da AS 100 (lunghezza 1)
@@ -222,7 +234,7 @@ router bgp 100
 #   .*          QUALSIASI rotta (permette tutto)
 
 
-[ 3. ROUTE-MAP & ACCESS-LIST (MED, LOCAL-PREF, MANIPOLAZIONE) ]
+[ 3. BGP POLICIES: ROUTE-MAP & ACCESS-LIST (MED, LOCAL-PREF, MANIPOLAZIONE) ]
 # Access-List (usata per selezionare il prefisso da matchare nella route-map):
 access-list myAggregate permit 100.1.0.0/16
 
@@ -246,10 +258,7 @@ router bgp 100
     neighbor 11.0.0.2 route-map metricOut out
 
 
-
---- 8. ARCHITETTURE TIPICHE D'ESAME ---
-
-[ BGP + RIP MULTI-HOMED (LOAD SHARING & REDISTRIBUZIONE) ]
+[ ARCHITETTURA: BGP + RIP MULTI-HOMED (LOAD SHARING & REDISTRIBUZIONE) ]
 # Border Router: daemons -> bgpd=yes, ripd=yes
 router rip
     network 100.1.0.0/16
@@ -270,7 +279,7 @@ ip prefix-list mineOut permit 100.1.0.0/17
 ip prefix-list defaultIn permit 0.0.0.0/0
 
 
-[ BGP + OSPF GATEWAY (DEFAULT ROUTE IN OSPF) ]
+[ ARCHITETTURA: BGP + OSPF GATEWAY (DEFAULT ROUTE IN OSPF) ]
 # Gateway Router: daemons -> bgpd=yes, ospfd=yes
 interface eth1
     ospf cost 10
@@ -289,8 +298,11 @@ ip prefix-list defaultIn permit 0.0.0.0/0
 
 
 
---- 9. DEBUGGING VTYSH ---
+================================================================================
+                    DEBUGGING VTYSH & DOMANDE ESAME
+================================================================================
 
+--- DEBUGGING VTYSH ---
 # --- BGP ---
 show ip bgp summary                 # Stato sessioni: se PfxRcd e' numero = UP; Active/Idle = DOWN
 show ip bgp                         # Tabella BGP: * = valida, > = best path installata in Zebra
@@ -319,9 +331,7 @@ show ip route                       # Tabella di routing globale installata
 # Codici: C=Connected, S=Static, R=RIP, O=OSPF, B=BGP, O IA=Inter-Area, O E2=External
 
 
-
---- 10. DOMANDE ESAME (answers.txt) ---
-
+--- DOMANDE ESAME (answers.txt) ---
 [ 1. Router ID di router X ]
 vtysh -c "show ip ospf" | grep "Router ID"
 # Regola: router-id manuale > max IP loopback > max IP eth fisiche attive
@@ -352,8 +362,7 @@ vtysh -c "show ip bgp summary"
 # Se c'e' scritto 'Idle' -> sessione disabilitata / amministrativamente giu'
 
 
-
---- 11. MODIFICHE AL VOLO (da vtysh senza riavviare) ---
+--- MODIFICHE AL VOLO (da vtysh senza riavviare) ---
 vtysh
 configure terminal
 router bgp 100
@@ -363,8 +372,7 @@ exit
 write                               # Salva le modifiche direttamente in frr.conf
 
 
-
---- 12. CONSEGNA ARCHIVIO ---
+--- CONSEGNA ARCHIVIO ---
 # Fuori dalla cartella del lab:
 tar -czvf cognome_matricola.tar.gz cognome_matricola
 zip -r cognome_matricola.zip cognome_matricola
