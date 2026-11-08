@@ -91,7 +91,7 @@ pathd_options="  -A 127.0.0.1"
 #frr_profile="datacenter"
 
 
-# This is the maximum number of FD's that will be available.  Upon startup this
+# This is the maximum number of FDs that will be available.  Upon startup this
 # is read by the control files and ulimit is called.  Uncomment and use a
 # reasonable value for your setup if you are expecting a large number of peers
 # in say BGP.
@@ -106,8 +106,8 @@ pathd_options="  -A 127.0.0.1"
 
 # For any daemon, you can specify a "wrap" command to start instead of starting
 # the daemon directly. This will simply be prepended to the daemon invocation.
-# These variables have the form daemon_wrap, where 'daemon' is the name of the
-# daemon (the same pattern as the daemon_options variables).
+# These variables have the form daemon_wrap, where daemon is the name of the
+# daemon - the same pattern as the daemon_options variables.
 #
 # Note that when daemons are started, they are told to daemonize with the `-d`
 # option. This has several implications. For one, the init script expects that
@@ -115,10 +115,10 @@ pathd_options="  -A 127.0.0.1"
 # wrap command here, it must comply with this expectation and daemonize as
 # well, or the init script will never return. Furthermore, because daemons are
 # themselves daemonized with -d, you must ensure that your wrapper command is
-# capable of following child processes after a fork() if you need it to do so.
+# capable of following child processes after a fork if you need it to do so.
 #
 # If your desired wrapper does not support daemonization, you can wrap it with
-# a utility program that daemonizes programs, such as 'daemonize'. An example
+# a utility program that daemonizes programs, such as daemonize. An example
 # of this might look like:
 #
 # bgpd_wrap="/usr/bin/daemonize /usr/bin/mywrapper"
