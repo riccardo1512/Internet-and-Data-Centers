@@ -55,6 +55,26 @@ router rip
     route 1.0.0.0/8                 # Inietta rotta verso rete remota
     route 0.0.0.0/0                 # Inietta default route
     redistribute connected          # (Solo se richiesto) inietta reti connesse
+    redistribute bgp                # Inietta BGP in RIP (standard nella maggior parte degli esoneri)
+log file /var/log/frr/frr.log
+
+[ RIP + BGP REDISTRIBUTION DETERMINISTICA (SOLO SE RICHIESTO: EVITARE RACE CONDITION / LOOP iBGP) ]
+# Problema: in FRR "redistribute bgp" inietta SIA eBGP SIA iBGP (a differenza di Cisco).
+# In un Transit AS con router interni tra due border, iniettare iBGP in RIP puo' causare loop/bouncing.
+# Soluzione: iniettare in RIP SOLO le rotte apprese da vicini esterni (eBGP), matchando il loro next-hop:
+!
+! 1. Prefix-list con la DMZ del vicino esterno eBGP (le 32 matcha il singolo IP dell'interfaccia remota):
+ip prefix-list myNeighbors permit 12.0.0.0/30 le 32
+!
+! 2. Route-map che accetta SOLO rotte con next-hop nella DMZ esterna:
+route-map eBGPonly permit 10
+    match ip next-hop prefix-list myNeighbors
+!
+! 3. Nel router rip applichiamo la route-map alla redistribuzione BGP:
+router rip
+    network 100.0.0.0/8
+    redistribute connected
+    redistribute bgp route-map eBGPonly
 log file /var/log/frr/frr.log
 
 [ OSPF SINGLE AREA + COSTI ]
