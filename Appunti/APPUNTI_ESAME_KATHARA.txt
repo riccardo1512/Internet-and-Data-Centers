@@ -18,8 +18,7 @@ ip route add default via 1.2.0.1
 
 # ROUTER (IP + start FRR):
 ip address add 10.0.0.1/30 dev eth0
-# INTERFACCIA LOOPBACK (se richiesta da compito, es: "uses loopbacks for its iBGP peerings"):
-ip address add 1.1.1.1/32 dev lo
+ip address add 1.1.1.1/32 dev lo   # Interfaccia Loopback (sempre /32)
 systemctl start frr
 
 # Simula guasto link:
@@ -48,161 +47,156 @@ vtysh -e "show ip ospf interface" | egrep "eth|Cost"
 cat /var/log/frr/frr.log            # Errori di sintassi/parsing di frr.conf
 
 
---- 4. TEMPLATE CONFIGURAZIONE FRR (/etc/frr/frr.conf) ---
 
-[ RIP ]
-# daemons: ripd=yes
+--- 4. CONFIGURAZIONE RIP (/etc/frr/frr.conf) ---
+# daemons: ripd=yes, zebra=yes
+
+[ RIP BASE ]
 router rip
     network 20.0.0.0/16             # Abilita RIP sulle interfacce nel prefisso
-    route 1.0.0.0/8                 # Inietta rotta verso rete remota
-    route 0.0.0.0/0                 # Inietta default route
-    redistribute connected          # (Solo se richiesto) inietta reti connesse
-    redistribute bgp                # Inietta BGP in RIP (standard nella maggior parte degli esoneri)
+    redistribute bgp                # Inietta rotte BGP dentro RIP
+    ! redistribute connected        # (Opzionale) inietta interfacce connesse
 log file /var/log/frr/frr.log
 
-[ RIP + BGP REDISTRIBUTION DETERMINISTICA (SOLO SE RICHIESTO: EVITARE RACE CONDITION / LOOP iBGP) ]
-# Problema: in FRR "redistribute bgp" inietta SIA eBGP SIA iBGP (a differenza di Cisco).
-# In un Transit AS con router interni tra due border, iniettare iBGP in RIP puo' causare loop/bouncing.
-# Soluzione: iniettare in RIP SOLO le rotte apprese da vicini esterni (eBGP), matchando il loro next-hop:
-!
-! 1. Prefix-list con la DMZ del vicino esterno eBGP (le 32 matcha il singolo IP dell'interfaccia remota):
+
+[ RIP CON ANNUNCIO LOOPBACK (PER iBGP) ]
+# Regola: se usi Loopback per iBGP, devi annunciarla in RIP altrimenti il vicino non sa raggiungerla!
+# E' preferibile usare 'network <IP>/32' per evitare di spillare DMZ esterne dentro RIP:
+router rip
+    network 1.0.0.0/8
+    network 1.1.1.1/32             # Annuncia SOLO la loopback (pulito, no route leaking)
+    redistribute bgp
+log file /var/log/frr/frr.log
+
+
+[ RIP DETERMINISTICO (SOLO SE RICHIESTO: EVITARE RACE CONDITION / LOOP iBGP) ]
+# Usato nei Transit AS per evitare che router interni rimbalzino traffico tra border.
+# Inietta in RIP solo le rotte apprese da eBGP (next-hop esterno) e NON quelle iBGP:
 ip prefix-list myNeighbors permit 12.0.0.0/30 le 32
-!
-! 2. Route-map che accetta SOLO rotte con next-hop nella DMZ esterna:
+
 route-map eBGPonly permit 10
     match ip next-hop prefix-list myNeighbors
-!
-! 3. Nel router rip applichiamo la route-map alla redistribuzione BGP:
+
 router rip
     network 100.0.0.0/8
     redistribute connected
     redistribute bgp route-map eBGPonly
 log file /var/log/frr/frr.log
 
-[ OSPF SINGLE AREA + COSTI ]
-# daemons: ospfd=yes
+
+
+--- 5. CONFIGURAZIONE OSPF (/etc/frr/frr.conf) ---
+# daemons: ospfd=yes, zebra=yes
+
+[ OSPF SINGLE AREA + COSTI INTERFACCIA ]
 interface eth0
     ospf cost 10
 interface eth1
     ospf cost 50
+
 router ospf
     network 10.0.0.0/16 area 0.0.0.0
 log file /var/log/frr/frr.log
 
-[ OSPF INTERCONNECT / ASBR (ROUTING STATICO) ]
-# REGOLA: definire la statica QUI, NON con 'ip route add' in .startup!
+
+[ OSPF ASBR (ROUTING STATICO ESTERNO) ]
+# Definire la statica qui in frr.conf (NON con 'ip route add' in .startup):
 ip route 20.0.0.0/8 10.0.0.2
+
 router ospf
     network 1.0.0.0/8 area 0.0.0.0
     redistribute static
-    redistribute connected          # (Solo se richiesto di redistribuire transito)
 log file /var/log/frr/frr.log
 
-[ OSPF ABR (BACKBONE + STUB) ]
+
+[ OSPF ABR (CONFINE TRA BACKBONE AREA 0 E AREA STUB) ]
 router ospf
     network 10.0.0.0/16 area 0.0.0.0
     network 100.0.0.0/30 area 1.1.1.1
-    area 1.1.1.1 stub
+    area 1.1.1.1 stub               # Dichiara l'area come Stub
 log file /var/log/frr/frr.log
 
-[ OSPF ROUTER INTERNO STUB ]
+
+[ OSPF ROUTER INTERNO AD AREA STUB ]
 router ospf
     network 100.0.0.0/30 area 1.1.1.1
     network 200.0.0.0/24 area 1.1.1.1
     area 1.1.1.1 stub               # OBBLIGATORIO su TUTTI i router dell'area!
 log file /var/log/frr/frr.log
 
-[ BGP BASE (eBGP & iBGP) ]
-# daemons: bgpd=yes
+
+
+--- 6. CONFIGURAZIONE BGP BASE (/etc/frr/frr.conf) ---
+# daemons: bgpd=yes, zebra=yes
+
+[ BGP STANDARD (PEERING SU LINK FISICO) ]
 router bgp 100
-    ! no bgp ebgp-requires-policy     # Decommentare se NON si usano filtri in/out (altrimenti FRR blocca eBGP)
-    no bgp network import-check       # Permette di annunciare network senza match esatto in tabella IGP
-    !
+    no bgp ebgp-requires-policy     # Decommentare se non ci sono filtri (FRR blocca eBGP senza filtri)
+    no bgp network import-check     # Permette di annunciare prefissi senza match esatto in tabella IGP
+
     ! Vicino eBGP (AS differente):
     neighbor 11.0.0.2 remote-as 200
     neighbor 11.0.0.2 description Router eBGP
-    !
-    ! Vicino iBGP (Stesso AS) - OBBLIGATORIO next-hop-self:
+
+    ! Vicino iBGP (Stesso AS - link fisico):
     neighbor 200.1.0.2 remote-as 100
     neighbor 200.1.0.2 description Router iBGP interno
-    neighbor 200.1.0.2 next-hop-self
-    !
-    ! =========================================================================
-    ! iBGP SU LOOPBACK (update-source) - GUIDA COMPLETA & DETTAGLI D'ESAME
-    ! =========================================================================
-    ! Quando la traccia richiede: "uses loopbacks for its iBGP peerings":
-    !
-    ! PERCHE' SI FA?
-    ! Le interfacce fisiche cadono se il cavo si rompe. La Loopback e' virtuale e
-    ! non cade MAI. Finche' l'IGP trova un percorso alternativo interno, l'iBGP resta UP.
-    !
-    ! I 3 PASSI FONDAMENTALI:
-    ! 1) IN .startup DEL ROUTER:
-    !    ip address add 1.1.1.1/32 dev lo           # SEMPRE con maschera /32!
-    !
-    ! 2) NELL'IGP INTERNO (RIP o OSPF):
-    !    BGP viaggia su TCP porta 179. Se il router non conosce la rotta verso la
-    !    loopback del vicino, da' "No route to host" e l'iBGP resta bloccato in Active/Connect.
-    !    - METODO CONSIGLIATO (Pulito / Senza Route Leaking):
-    !        router rip
-    !            network 1.0.0.0/8
-    !            network 1.1.1.1/32                 # Annuncia SOLO la propria loopback in RIP
-    !      *Perche' e' migliore*: evita di "spillare" (leak) link di peering esterni /30
-    !      dentro RIP, prevenendo conflitti di Distanza Amministrativa (RIP AD 120 vs iBGP AD 200).
-    !    - METODO ALTERNATIVO:
-    !        router rip
-    !            redistribute connected             # Inietta tutto cio' che e' connesso (lo + DMZ)
-    !    - IN OSPF:
-    !        router ospf
-    !            network 1.1.1.1/32 area 0.0.0.0
-    !
-    ! 3) IN frr.conf SOTTO router bgp:
-    !    - neighbor <IP_REMOTO> (Cosa mi aspetto): IP di loopback del vicino remoto
-    !    - update-source <MIO_IP> (Chi sono io): firma i pacchetti TCP in uscita
-    !      con l'IP di loopback locale invece che con l'IP della scheda fisica di uscita.
-    neighbor 2.2.2.2 remote-as 100
-    neighbor 2.2.2.2 description Router iBGP su Loopback
-    neighbor 2.2.2.2 update-source 1.1.1.1      # oppure: update-source lo
-    neighbor 2.2.2.2 next-hop-self              # Obbligatorio in iBGP!
-    !
-    ! REGOLA D'ORO LOOPBACK (DA MEMORIZZARE):
-    ! - Loopback + update-source si usa SOLO ED ESCLUSIVAMENTE per iBGP (stesso AS).
-    ! - Tra AS differenti (eBGP) NON si usa mai la loopback ne' RIP/OSPF:
-    !   il peering eBGP si fa SEMPRE sull'IP fisico del cavo /30 direttamente connesso!
-    ! =========================================================================
-    !
-    ! Inviare la default route a un cliente/stub:
+    neighbor 200.1.0.2 next-hop-self          # OBBLIGATORIO in iBGP!
+
+    ! Inviare default route a un cliente/stub:
     neighbor 11.0.0.2 default-originate
-    !
+
     ! Prefisso proprio da annunciare:
     network 100.1.0.0/16
 log file /var/log/frr/frr.log
 
-[ BGP POLICIES: PREFIX-LIST ]
-# Sintassi filtri prefissi:
+
+[ iBGP SU LOOPBACK (update-source) ]
+# Usato quando il compito dice: "AS uses loopbacks for its iBGP peerings".
+# 1. In .startup: ip address add 1.1.1.1/32 dev lo
+# 2. In RIP: network 1.1.1.1/32 (oppure in OSPF: network 1.1.1.1/32 area 0.0.0.0)
+# 3. Sotto router bgp:
+router bgp 100
+    no bgp ebgp-requires-policy
+    no bgp network import-check
+
+    neighbor 2.2.2.2 remote-as 100
+    neighbor 2.2.2.2 description Router iBGP su Loopback
+    neighbor 2.2.2.2 update-source 1.1.1.1    # La propria loopback (oppure: update-source lo)
+    neighbor 2.2.2.2 next-hop-self            # Riscrive il next-hop per il vicino interno
+
+    network 100.1.0.0/16
+log file /var/log/frr/frr.log
+
+# NOTA D'ESAME: la Loopback si usa SOLO per iBGP (stesso AS).
+# Tra AS differenti (eBGP) si usa SEMPRE l'IP fisico del cavo /30. Tra AS diversi non si usa mai RIP.
+
+
+
+--- 7. BGP POLICIES (/etc/frr/frr.conf) ---
+
+[ 1. PREFIX-LIST (FILTRO PREFISSI IP) ]
+# Sintassi definizioni:
 ip prefix-list <NOME> permit 100.1.0.0/16
 ip prefix-list <NOME> permit 200.1.0.0/16 le 24      # Da /16 fino a /24 comprese
 ip prefix-list <NOME> permit 10.0.0.0/8 ge 16 le 24  # Maschere tra /16 e /24
-ip prefix-list <NOME> deny 192.168.1.0/24
+ip prefix-list <NOME> deny 192.168.1.0/24            # Scarta prefisso
 ip prefix-list <NOME> permit 0.0.0.0/0               # Solo la default route
-ip prefix-list <NOME> permit any                     # Qualsiasi prefisso (0.0.0.0/0 le 32)
-!
-# Applicazione sul vicino BGP (in ingresso o uscita):
+ip prefix-list <NOME> permit any                     # Qualsiasi prefisso
+
+# Applicazione sul vicino (in ingresso o in uscita):
 router bgp 100
-    ! no bgp ebgp-requires-policy
-    no bgp network import-check
     neighbor 11.0.0.2 prefix-list <NOME> in
     neighbor 11.0.0.2 prefix-list <NOME> out
 
-[ BGP POLICIES: AS-PATH ACCESS-LIST & REGEX ]
-# Sintassi filtro AS-Path:
+
+[ 2. AS-PATH ACCESS-LIST (FILTRO PERCORSI AS) ]
+# Sintassi definizioni:
 bgp as-path access-list <NOME> permit <REGEXP>
 bgp as-path access-list <NOME> deny <REGEXP>
-!
-# Applicazione sul vicino BGP con filter-list:
+
+# Applicazione sul vicino (filter-list):
 router bgp 100
-    ! no bgp ebgp-requires-policy
-    no bgp network import-check
     neighbor 11.0.0.2 filter-list <NOME> in
     neighbor 11.0.0.2 filter-list <NOME> out
 !
@@ -220,92 +214,88 @@ router bgp 100
 #
 # Pattern Tipici Esame:
 #   ^$          Rotte originate LOCALMENTE (AS-Path vuoto)
-#   _100_       Rotte che TRANSITANO per l'AS 100 (in qualunque posizione)
-#   ^100_       Rotte RICEVUTE DIRETTAMENTE dall'AS 100 vicino
-#   _100$       Rotte ORIGINATE dall'AS 100 (AS 100 è all'estremità destra)
-#   ^100$       Rotte sia originate sia ricevute direttamente da AS 100 (lunghezza 1)
-#   ^[0-9]+$    Rotte originate da QUALSIASI vicino direttamente connesso (lunghezza 1)
+#   _100_       Rotte che TRA6NSITANO per AS 100 (in qualsiasi posizione)
+#   ^100_       Rotte RICEVUTE DIRETTAMENTE da AS 100 vicino
+#   _100$       Rotte ORIGINATE da AS 100 (AS 100 all'estremita' destra)
+#   ^100$       Rotte sia originate sia ricevute da AS 100 (lunghezza 1)
+#   ^[0-9]+$    Rotte originate da QUALSIASI vicino diretto (lunghezza 1)
 #   .*          QUALSIASI rotta (permette tutto)
 
-[ BGP POLICIES: ROUTE-MAP & ACCESS-LIST ]
-# Sintassi Access-List (usata nei lab ufficiali per matchare prefissi dentro la route-map):
-access-list <NOME> permit <NET/MASK>
-# Esempio ufficiale Kathará:
+
+[ 3. ROUTE-MAP & ACCESS-LIST (MED, LOCAL-PREF, MANIPOLAZIONE) ]
+# Access-List (usata per selezionare il prefisso da matchare nella route-map):
 access-list myAggregate permit 100.1.0.0/16
-!
-# 1. Outbound Route-Map con match ip address (Access-List) e MED / Metric:
+
+# Route-Map Outbound: imposta MED (influenzare l'ingresso altrui, piu' BASSO vince):
 route-map metricOut permit 10
-    match ip address myAggregate    # Applica l'azione solo ai prefissi definiti nell'access-list
-    set metric 10                   # Imposta MED (più BASSO vince per influenzare l'ingresso altrui)
-!
-# 2. Inbound Route-Map con Local Preference (per scegliere da dove USCIRE dall'AS):
+    match ip address myAggregate
+    set metric 10
+
+# Route-Map Inbound: imposta Local-Pref (scegliere l'uscita locale, piu' ALTO vince, default 100):
 route-map localPrefIn permit 10
-    set local-preference 150        # Più ALTO vince (default: 100, scambiato solo in iBGP)
-    ! Se condizionato a un prefisso o AS-Path, aggiungere:
-    ! match ip address prefix-list <NOME_PREFIX_LIST>
-    ! match as-path <NOME_ACL>
-!
-# 3. Regola deny in route-map (scarta ciò che matcha e lascia passare il resto):
+    set local-preference 150
+
+# Route-Map Deny: scarta cio' che matcha e fa passare il resto:
 route-map filtroTotale deny 10
     match as-path <NOME_ACL>
-route-map filtroTotale permit 20    # Lascia passare il resto
-!
-# Applicazione sul vicino BGP:
+route-map filtroTotale permit 20
+
+# Applicazione sul vicino:
 router bgp 100
-    ! no bgp ebgp-requires-policy
-    no bgp network import-check
     neighbor 11.0.0.2 route-map localPrefIn in
     neighbor 11.0.0.2 route-map metricOut out
 
-[ BGP + RIP INTERPLAY (LOAD SHARING & REDISTRIBUZIONE) ]
+
+
+--- 8. ARCHITETTURE TIPICHE D'ESAME ---
+
+[ BGP + RIP MULTI-HOMED (LOAD SHARING & REDISTRIBUZIONE) ]
 # Border Router: daemons -> bgpd=yes, ripd=yes
 router rip
     network 100.1.0.0/16
     redistribute bgp                # Inietta la default route BGP dentro RIP
 !
 router bgp 100
-    ! no bgp ebgp-requires-policy
     no bgp network import-check
     neighbor 11.0.0.1 remote-as 10
     neighbor 11.0.0.1 prefix-list mineOut out
     neighbor 11.0.0.1 prefix-list defaultIn in
-    !
-    ! Ingress Load Sharing (Border 1 annuncia /17 bassa, Border 2 /17 alta, entrambi /16 backup):
+
+    # Load Sharing: Border 1 annuncia /17 bassa, Border 2 annuncia /17 alta, entrambi /16 backup
     network 100.1.0.0/16            # Backup globale
-    network 100.1.0.0/17            # Primario prima metà (su Border 1)
-    ! (su Border 2 mettere invece: network 100.1.128.0/17)
+    network 100.1.0.0/17            # Primario prima meta' (su Border 2 mettere: 100.1.128.0/17)
 !
 ip prefix-list mineOut permit 100.1.0.0/16
 ip prefix-list mineOut permit 100.1.0.0/17
 ip prefix-list defaultIn permit 0.0.0.0/0
 
-[ BGP + OSPF INTERPLAY ]
+
+[ BGP + OSPF GATEWAY (DEFAULT ROUTE IN OSPF) ]
 # Gateway Router: daemons -> bgpd=yes, ospfd=yes
 interface eth1
     ospf cost 10
 !
 router ospf
     network 10.0.0.0/16 area 0.0.0.0
-    default-information originate always   # Inietta la default route dentro OSPF (always non attende match nella FIB)
-    ! redistribute connected
+    default-information originate always   # Inietta la default route dentro OSPF
 !
 router bgp 100
-    ! no bgp ebgp-requires-policy
     no bgp network import-check
     neighbor 11.0.0.1 remote-as 10
     neighbor 11.0.0.1 prefix-list defaultIn in
-    network 10.0.0.0/16             # Annuncia il prefisso dell'AS su Internet
+    network 10.0.0.0/16
 !
 ip prefix-list defaultIn permit 0.0.0.0/0
 
 
---- 5. DEBUGGING VTYSH ---
+
+--- 9. DEBUGGING VTYSH ---
 
 # --- BGP ---
-show ip bgp summary                 # Stato sessioni: se PfxRcd è numero = UP; Active/Idle = DOWN
+show ip bgp summary                 # Stato sessioni: se PfxRcd e' numero = UP; Active/Idle = DOWN
 show ip bgp                         # Tabella BGP: * = valida, > = best path installata in Zebra
-show ip bgp <NET/MASK>              # Dettagli rotta (AS-Path esatto, MED, Local-Pref, Communities)
-show ip bgp neighbor <IP> advertised-routes # Prefissi annunciati verso quel vicino
+show ip bgp <NET/MASK>              # Dettagli rotta (AS-Path esatto, MED, Local-Pref)
+show ip bgp neighbor <IP> advertised-routes # Prefissi annunciati a quel vicino
 show ip bgp neighbor <IP> routes    # Prefissi ricevuti da quel vicino
 
 # --- OSPF ---
@@ -329,7 +319,8 @@ show ip route                       # Tabella di routing globale installata
 # Codici: C=Connected, S=Static, R=RIP, O=OSPF, B=BGP, O IA=Inter-Area, O E2=External
 
 
---- 6. DOMANDE ESAME (answers.txt) ---
+
+--- 10. DOMANDE ESAME (answers.txt) ---
 
 [ 1. Router ID di router X ]
 vtysh -c "show ip ospf" | grep "Router ID"
@@ -344,25 +335,25 @@ vtysh -c "show ip route" | grep -E "0\.0\.0\.0/0|default"
 # Regola: router interno a Stub = 1 (o num ABR); router in Area 0 (Backbone) = 0
 
 [ 4. BGP Decision Process (Come viene scelto il Best Path '>') ]
-# In ordine di precedenza:
-# 1. Weight (locale Cisco/FRR, più alto vince)
-# 2. Local Preference (scambiata in iBGP, più ALTO vince, default 100)
-# 3. Locally Originated (rotta generata da network/redistribute locale vince su appresa)
-# 4. AS-Path Length (AS-Path più CORTO vince)
+# 1. Weight (locale Cisco/FRR, piu' alto vince)
+# 2. Local Preference (scambiata in iBGP, piu' ALTO vince, default 100)
+# 3. Locally Originated (rotta da network/redistribute locale vince su appresa)
+# 4. AS-Path Length (AS-Path piu' CORTO vince)
 # 5. Origin Type (IGP [i] vince su EGP [e] che vince su Incomplete [?])
-# 6. MED / Multi-Exit Discriminator (inviato tra AS adiacenti, più BASSO vince)
+# 6. MED / Multi-Exit Discriminator (inviato tra AS adiacenti, piu' BASSO vince)
 # 7. eBGP path vince su iBGP path
 # 8. Minor costo IGP per raggiungere il BGP next-hop
-# 9. Router-ID BGP più basso
+# 9. Router-ID BGP piu' basso
 
 [ 5. Stato sessione BGP con vicino X ]
 vtysh -c "show ip bgp summary"
-# Se sotto 'State/PfxRcd' c'è un NUMERO (es: 0, 1, 5) -> sessione ESTABLISHED
-# Se c'è scritto 'Active' o 'Connect' -> TCP handshake fallito / non risponde
-# Se c'è scritto 'Idle' -> sessione disabilitata / amministrativamente giù
+# Se sotto 'State/PfxRcd' c'e' un NUMERO (es: 0, 1, 5) -> sessione ESTABLISHED (UP)
+# Se c'e' scritto 'Active' o 'Connect' -> TCP handshake fallito / rotta mancante
+# Se c'e' scritto 'Idle' -> sessione disabilitata / amministrativamente giu'
 
 
---- 7. MODIFICHE AL VOLO (da vtysh senza riavviare) ---
+
+--- 11. MODIFICHE AL VOLO (da vtysh senza riavviare) ---
 vtysh
 configure terminal
 router bgp 100
@@ -372,7 +363,8 @@ exit
 write                               # Salva le modifiche direttamente in frr.conf
 
 
---- 8. CONSEGNA ARCHIVIO ---
+
+--- 12. CONSEGNA ARCHIVIO ---
 # Fuori dalla cartella del lab:
 tar -czvf cognome_matricola.tar.gz cognome_matricola
 zip -r cognome_matricola.zip cognome_matricola
