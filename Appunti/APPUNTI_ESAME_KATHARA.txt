@@ -18,6 +18,8 @@ ip route add default via 1.2.0.1
 
 # ROUTER (IP + start FRR):
 ip address add 10.0.0.1/30 dev eth0
+# INTERFACCIA LOOPBACK (se richiesta da compito, es: "uses loopbacks for its iBGP peerings"):
+ip address add 1.1.1.1/32 dev lo
 systemctl start frr
 
 # Simula guasto link:
@@ -124,6 +126,50 @@ router bgp 100
     neighbor 200.1.0.2 remote-as 100
     neighbor 200.1.0.2 description Router iBGP interno
     neighbor 200.1.0.2 next-hop-self
+    !
+    ! =========================================================================
+    ! iBGP SU LOOPBACK (update-source) - GUIDA COMPLETA & DETTAGLI D'ESAME
+    ! =========================================================================
+    ! Quando la traccia richiede: "uses loopbacks for its iBGP peerings":
+    !
+    ! PERCHE' SI FA?
+    ! Le interfacce fisiche cadono se il cavo si rompe. La Loopback e' virtuale e
+    ! non cade MAI. Finche' l'IGP trova un percorso alternativo interno, l'iBGP resta UP.
+    !
+    ! I 3 PASSI FONDAMENTALI:
+    ! 1) IN .startup DEL ROUTER:
+    !    ip address add 1.1.1.1/32 dev lo           # SEMPRE con maschera /32!
+    !
+    ! 2) NELL'IGP INTERNO (RIP o OSPF):
+    !    BGP viaggia su TCP porta 179. Se il router non conosce la rotta verso la
+    !    loopback del vicino, da' "No route to host" e l'iBGP resta bloccato in Active/Connect.
+    !    - METODO CONSIGLIATO (Pulito / Senza Route Leaking):
+    !        router rip
+    !            network 1.0.0.0/8
+    !            network 1.1.1.1/32                 # Annuncia SOLO la propria loopback in RIP
+    !      *Perche' e' migliore*: evita di "spillare" (leak) link di peering esterni /30
+    !      dentro RIP, prevenendo conflitti di Distanza Amministrativa (RIP AD 120 vs iBGP AD 200).
+    !    - METODO ALTERNATIVO:
+    !        router rip
+    !            redistribute connected             # Inietta tutto cio' che e' connesso (lo + DMZ)
+    !    - IN OSPF:
+    !        router ospf
+    !            network 1.1.1.1/32 area 0.0.0.0
+    !
+    ! 3) IN frr.conf SOTTO router bgp:
+    !    - neighbor <IP_REMOTO> (Cosa mi aspetto): IP di loopback del vicino remoto
+    !    - update-source <MIO_IP> (Chi sono io): firma i pacchetti TCP in uscita
+    !      con l'IP di loopback locale invece che con l'IP della scheda fisica di uscita.
+    neighbor 2.2.2.2 remote-as 100
+    neighbor 2.2.2.2 description Router iBGP su Loopback
+    neighbor 2.2.2.2 update-source 1.1.1.1      # oppure: update-source lo
+    neighbor 2.2.2.2 next-hop-self              # Obbligatorio in iBGP!
+    !
+    ! REGOLA D'ORO LOOPBACK (DA MEMORIZZARE):
+    ! - Loopback + update-source si usa SOLO ED ESCLUSIVAMENTE per iBGP (stesso AS).
+    ! - Tra AS differenti (eBGP) NON si usa mai la loopback ne' RIP/OSPF:
+    !   il peering eBGP si fa SEMPRE sull'IP fisico del cavo /30 direttamente connesso!
+    ! =========================================================================
     !
     ! Inviare la default route a un cliente/stub:
     neighbor 11.0.0.2 default-originate
