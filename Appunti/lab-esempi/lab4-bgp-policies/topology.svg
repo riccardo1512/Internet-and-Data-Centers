@@ -277,7 +277,7 @@
     <rect x="0" y="0" width="360" height="90" fill="#ffffcc" stroke="#000000" stroke-width="1.5"/>
     <text x="180" y="24" fill="#000000" font-size="14" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">AS 200 Policies (Border &amp; iBGP)</text>
     <text x="180" y="46" fill="#003366" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">as200r1: filter-list permit ^100_ | local-pref 150</text>
-    <text x="180" y="64" fill="#003366" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">as200r2: MED 50 | as-path prepend 200 200</text>
+    <text x="180" y="64" fill="#003366" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">as200r2: MED 50 | match ip address myAggregate</text>
     <text x="180" y="80" fill="#cc0000" font-size="12" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">iBGP peering tra r1 e r2 con next-hop-self</text>
   </g>
 </svg>

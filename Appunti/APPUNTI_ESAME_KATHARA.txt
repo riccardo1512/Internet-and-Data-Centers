@@ -161,20 +161,25 @@ router bgp 100
 #   ^[0-9]+$    Rotte originate da QUALSIASI vicino direttamente connesso (lunghezza 1)
 #   .*          QUALSIASI rotta (permette tutto)
 
-[ BGP POLICIES: ROUTE-MAP ]
-# Inbound: modifica Local Preference per scegliere da dove USCIRE dall'AS
-route-map setLocalPref permit 10
-    match ip address prefix-list <NOME>
-    set local-preference 150        # Più ALTO vince (default: 100, solo iBGP)
+[ BGP POLICIES: ROUTE-MAP & ACCESS-LIST ]
+# Sintassi Access-List (usata nei lab ufficiali per matchare prefissi dentro la route-map):
+access-list <NOME> permit <NET/MASK>
+# Esempio ufficiale Kathará:
+access-list myAggregate permit 100.1.0.0/16
 !
-# Outbound: allunga AS-Path o imposta MED per influenzare come ENTRANO gli altri
-route-map tuneOutbound permit 10
-    match as-path <NOME_ACL>
-    set metric 50                   # MED: più BASSO vince (comunicato ai vicini eBGP)
-    set as-path prepend 100 100     # Aggiunge 2 volte il proprio AS per allungare il path
-    set community 100:10            # Tagga con community BGP
+# 1. Outbound Route-Map con match ip address (Access-List) e MED / Metric:
+route-map metricOut permit 10
+    match ip address myAggregate    # Applica l'azione solo ai prefissi definiti nell'access-list
+    set metric 10                   # Imposta MED (più BASSO vince per influenzare l'ingresso altrui)
 !
-# Regola deny in route-map (scarta tutto ciò che matcha):
+# 2. Inbound Route-Map con Local Preference (per scegliere da dove USCIRE dall'AS):
+route-map localPrefIn permit 10
+    set local-preference 150        # Più ALTO vince (default: 100, scambiato solo in iBGP)
+    ! Se condizionato a un prefisso o AS-Path, aggiungere:
+    ! match ip address prefix-list <NOME_PREFIX_LIST>
+    ! match as-path <NOME_ACL>
+!
+# 3. Regola deny in route-map (scarta ciò che matcha e lascia passare il resto):
 route-map filtroTotale deny 10
     match as-path <NOME_ACL>
 route-map filtroTotale permit 20    # Lascia passare il resto
@@ -183,8 +188,8 @@ route-map filtroTotale permit 20    # Lascia passare il resto
 router bgp 100
     ! no bgp ebgp-requires-policy
     no bgp network import-check
-    neighbor 11.0.0.2 route-map setLocalPref in
-    neighbor 11.0.0.2 route-map tuneOutbound out
+    neighbor 11.0.0.2 route-map localPrefIn in
+    neighbor 11.0.0.2 route-map metricOut out
 
 [ BGP + RIP INTERPLAY (LOAD SHARING & REDISTRIBUZIONE) ]
 # Border Router: daemons -> bgpd=yes, ripd=yes
@@ -277,7 +282,7 @@ vtysh -c "show ip route" | grep -E "0\.0\.0\.0/0|default"
 # 1. Weight (locale Cisco/FRR, più alto vince)
 # 2. Local Preference (scambiata in iBGP, più ALTO vince, default 100)
 # 3. Locally Originated (rotta generata da network/redistribute locale vince su appresa)
-# 4. AS-Path Length (AS-Path più CORTO vince; prepending serve ad allungarlo)
+# 4. AS-Path Length (AS-Path più CORTO vince)
 # 5. Origin Type (IGP [i] vince su EGP [e] che vince su Incomplete [?])
 # 6. MED / Multi-Exit Discriminator (inviato tra AS adiacenti, più BASSO vince)
 # 7. eBGP path vince su iBGP path
