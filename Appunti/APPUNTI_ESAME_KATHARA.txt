@@ -231,7 +231,11 @@ router bgp 100
 #   _100$       Rotte ORIGINATE da AS 100 (AS 100 all'estremita' destra)
 #   ^100$       Rotte sia originate sia ricevute da AS 100 (lunghezza 1)
 #   ^[0-9]+$    Rotte originate da QUALSIASI vicino diretto (lunghezza 1)
-#   .*          QUALSIASI rotta (permette tutto)
+#   .*          QUALSIASI rotta (permette tutto - OBBLIGATORIO alla fine se usi clausole deny!)
+#
+# REGOLA D'ORO PER I FILTRI 'deny':
+# C'e' un deny implicito finale! Se scarti dei percorsi (es: deny _2_), DEVI SEMPRE terminare con:
+# bgp as-path access-list <NOME> permit .*       # Altrimenti scarterai l'intero traffico!
 
 
 [ 3. BGP POLICIES: ROUTE-MAP & ACCESS-LIST (MED, LOCAL-PREF, MANIPOLAZIONE) ]
