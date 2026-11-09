@@ -267,15 +267,15 @@ router rip
 router bgp 100
     no bgp network import-check
     neighbor 11.0.0.1 remote-as 10
-    neighbor 11.0.0.1 prefix-list mineOut out
+    neighbor 11.0.0.1 prefix-list mineOutOnly out
     neighbor 11.0.0.1 prefix-list defaultIn in
 
     # Load Sharing: Border 1 annuncia /17 bassa, Border 2 annuncia /17 alta, entrambi /16 backup
     network 100.1.0.0/16            # Backup globale
     network 100.1.0.0/17            # Primario prima meta - su Border 2 mettere: 100.1.128.0/17
 !
-ip prefix-list mineOut permit 100.1.0.0/16
-ip prefix-list mineOut permit 100.1.0.0/17
+ip prefix-list mineOutOnly permit 100.1.0.0/16
+ip prefix-list mineOutOnly permit 100.1.0.0/17
 ip prefix-list defaultIn permit 0.0.0.0/0
 
 
