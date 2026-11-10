@@ -2,9 +2,11 @@
 Kathara-Labs/
 Slides/
 1 esonero/
+2 esonero/
 
 # File temporanei ed editor
 *.swp
 *.swo
 *~
 .DS_Store
+Internet.pdf
